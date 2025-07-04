@@ -36,6 +36,51 @@ git-portfolio-manager/
 │       └── metrics-generator.js
 ```
 
+## 🚀 Local Deployment & Testing
+
+### Feature Branch Testing
+When testing a feature branch locally before merging:
+
+```bash
+# 1. Build the current feature branch
+npm run build
+
+# 2. Install globally from current directory
+npm install -g .
+
+# 3. Start the dashboard server (from project root)
+# Option A: Using CLI (may have initialization issues)
+git-portfolio-manager start --port 3010 --no-open --dev
+
+# Option B: Direct server start (recommended for testing)
+node lib/dashboard/server.js --port 3010
+
+# 4. Test dashboard and API endpoints
+curl http://localhost:3010/                    # Main dashboard
+curl http://localhost:3010/trackdown.html      # TrackDown UI
+curl http://localhost:3010/api/trackdown/projects   # API test
+```
+
+### TrackDown UI Testing
+The TrackDown UI provides a complete task management interface:
+
+- **Main Dashboard**: http://localhost:3010/
+- **TrackDown Manager**: http://localhost:3010/trackdown.html
+- **API Endpoints**:
+  - `GET /api/trackdown/projects` - List projects
+  - `GET /api/trackdown/tickets` - List tickets (with filtering)
+  - `GET /api/trackdown/analytics` - Analytics data
+  - `POST /api/trackdown/sync` - Sync/refresh data
+  - `POST /api/trackdown/tickets` - Create tickets
+  - `PUT /api/trackdown/tickets/{project}/{id}` - Update tickets
+  - `DELETE /api/trackdown/tickets/{project}/{id}` - Delete tickets
+
+### Deployment Notes
+- Server looks for static files in `lib/dashboard/static/`
+- TrackDown manager discovers projects from current working directory
+- Server auto-detects available ports if requested port is busy
+- All TrackDown data is stored in `trackdown/BACKLOG.md` files
+
 ## 🔄 Development Workflow Steps
 
 ### 1. Task Selection & Planning
