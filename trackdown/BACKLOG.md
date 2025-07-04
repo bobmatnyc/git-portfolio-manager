@@ -7,10 +7,16 @@
 
 ---
 
-## 🎯 Current Sprint (Sprint 1): Package Publishing & Testing
+## 🎯 Current Sprint (Sprint 2): TrackDown Integration
 
 ### In Progress
-- No items currently in progress
+- **[US-015]** Complete TrackDown API Integration
+  - **Type:** User Story
+  - **Priority:** High
+  - **Story Points:** 5
+  - **Status:** TODO
+  - **Epic:** EP-003 TrackDown Task Management
+  - **Description:** Complete the TrackDown task manager by adding API endpoints to dashboard server
 
 ### ✅ Completed  
 - [x] **[US-001]** NPM Package Publishing and Local Testing
@@ -22,6 +28,23 @@
   - **Description:** Publish git-portfolio-manager to npm and install locally for testing
 
 ## 📋 Product Backlog
+
+### Epic: EP-003 TrackDown Task Management
+**Status:** In Progress 🚀  
+**Priority:** High  
+**Target:** Q3 2025  
+**Description:** Implement comprehensive TrackDown task management system with JIRA-like capabilities
+
+#### Subtickets:
+- **[US-014]** TrackDown UI Foundation ✅ (Completed)
+  - Full Kanban board interface
+  - Advanced filtering and analytics
+  - Modal-based ticket management
+  - GitHub sync preparation
+- **[US-015]** Complete TrackDown API Integration 📝 (TODO)
+  - Add API endpoints to dashboard server  
+  - Wire TrackDown manager to frontend
+  - End-to-end testing and validation
 
 ### Epic: EP-001 NPM Package Development & Publishing
 **Status:** Done ✅  
