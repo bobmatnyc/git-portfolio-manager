@@ -1,0 +1,117 @@
+{
+  "name": "git-portfolio-manager",
+  "version": "1.0.0",
+  "description": "Git portfolio management and monitoring dashboard with TrackDown integration, GitHub Issues, and business intelligence for development teams",
+  "main": "lib/index.js",
+  "bin": {
+    "git-portfolio-manager": "./bin/git-portfolio-manager.js"
+  },
+  "scripts": {
+    "start": "node bin/git-portfolio-manager.js",
+    "dev": "node bin/git-portfolio-manager.js --dev",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "biome check lib/ bin/ test/",
+    "lint:fix": "biome check lib/ bin/ test/ --apply",
+    "build": "echo 'No build step required'",
+    "release": "standard-version",
+    "release:major": "standard-version --release-as major",
+    "release:minor": "standard-version --release-as minor", 
+    "release:patch": "standard-version --release-as patch",
+    "prepublishOnly": "npm run test && npm run lint",
+    "postinstall": "echo 'Git Portfolio Manager installed! Run: npx git-portfolio-manager'"
+  },
+  "keywords": [
+    "git",
+    "project-management",
+    "monitoring", 
+    "dashboard",
+    "analytics",
+    "trackdown",
+    "github-issues",
+    "development",
+    "team",
+    "business-intelligence",
+    "cli",
+    "devops"
+  ],
+  "author": {
+    "name": "Robert (Masa) Matsuoka",
+    "email": "masa@matsuoka.com",
+    "url": "https://github.com/matsuoka"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bobmatnyc/git-portfolio-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bobmatnyc/git-portfolio-manager/issues"
+  },
+  "homepage": "https://github.com/bobmatnyc/git-portfolio-manager#readme",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "inquirer": "^8.2.6",
+    "fs-extra": "^11.1.1",
+    "glob": "^10.3.10",
+    "open": "^8.4.2",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "js-yaml": "^4.1.0",
+    "joi": "^17.11.0",
+    "@octokit/rest": "^20.0.2",
+    "@octokit/auth-token": "^4.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0",
+    "@biomejs/biome": "1.8.3",
+    "standard-version": "^9.5.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "biome check --apply",
+      "git add"
+    ]
+  },
+  "standard-version": {
+    "types": [
+      {"type": "feat", "section": "Features"},
+      {"type": "fix", "section": "Bug Fixes"},
+      {"type": "chore", "hidden": true},
+      {"type": "docs", "section": "Documentation"},
+      {"type": "style", "hidden": true},
+      {"type": "refactor", "section": "Code Refactoring"},
+      {"type": "perf", "section": "Performance Improvements"},
+      {"type": "test", "hidden": true},
+      {"type": "build", "hidden": true},
+      {"type": "ci", "hidden": true}
+    ]
+  }
+}

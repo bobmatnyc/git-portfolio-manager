@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Monitoring Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .card {
+            @apply bg-white rounded-lg border border-gray-200 shadow-sm;
+        }
+        .metric-card {
+            @apply p-6 space-y-2;
+        }
+        .health-healthy {
+            @apply text-green-600 bg-green-50 border-green-200;
+        }
+        .health-attention {
+            @apply text-yellow-600 bg-yellow-50 border-yellow-200;
+        }
+        .health-critical {
+            @apply text-red-600 bg-red-50 border-red-200;
+        }
+        .health-unknown {
+            @apply text-gray-400 bg-gray-50 border-gray-200;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="activity" class="h-8 w-8 text-blue-600"></i>
+                        <h1 class="text-2xl font-bold text-gray-900">Portfolio Monitoring Dashboard</h1>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sm text-gray-500">
+                        <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                        <span id="lastUpdate">Last Update: <span class="font-medium">Loading...</span></span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="clearSelectionBtn" class="flex items-center space-x-2 px-3 py-2 text-sm text-blue-600 hover:text-blue-900 border border-blue-300 rounded-md hover:bg-blue-50" style="display: none;" onclick="window.dashboard.clearSelectedProject()">
+                        <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                        <span>Back to Portfolio</span>
+                    </button>
+                    <button class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900">
+                        <i data-lucide="settings" class="h-4 w-4"></i>
+                        <span>Settings</span>
+                    </button>
+                    <button class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900">
+                        <i data-lucide="user" class="h-4 w-4"></i>
+                        <span>Profile</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Executive Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Healthy Projects -->
+            <div class="card health-healthy metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">Healthy Projects</p>
+                        <p class="text-3xl font-bold" id="healthyCount">-</p>
+                        <p class="text-xs flex items-center">
+                            <i data-lucide="trending-up" class="h-3 w-3 mr-1"></i>
+                            <span id="healthyTrend">Loading...</span>
+                        </p>
+                    </div>
+                    <i data-lucide="check-circle" class="h-8 w-8"></i>
+                </div>
+            </div>
+
+            <!-- Need Attention -->
+            <div class="card health-attention metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">Need Attention</p>
+                        <p class="text-3xl font-bold" id="attentionCount">-</p>
+                        <p class="text-xs flex items-center">
+                            <i data-lucide="alert-triangle" class="h-3 w-3 mr-1"></i>
+                            <span id="attentionTrend">Loading...</span>
+                        </p>
+                    </div>
+                    <i data-lucide="alert-circle" class="h-8 w-8"></i>
+                </div>
+            </div>
+
+            <!-- Critical Issues -->
+            <div class="card health-critical metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">Critical Issues</p>
+                        <p class="text-3xl font-bold" id="criticalCount">-</p>
+                        <p class="text-xs flex items-center">
+                            <i data-lucide="alert-triangle" class="h-3 w-3 mr-1"></i>
+                            <span id="criticalTrend">Loading...</span>
+                        </p>
+                    </div>
+                    <i data-lucide="alert-octagon" class="h-8 w-8"></i>
+                </div>
+            </div>
+
+            <!-- Total Activity -->
+            <div class="card metric-card border-blue-200 bg-blue-50 text-blue-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">Total Activity</p>
+                        <p class="text-3xl font-bold" id="totalActivity">-</p>
+                        <p class="text-xs flex items-center">
+                            <i data-lucide="trending-up" class="h-3 w-3 mr-1"></i>
+                            <span id="activityTrend">commits/week</span>
+                        </p>
+                    </div>
+                    <i data-lucide="activity" class="h-8 w-8"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Git Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Active Branches -->
+            <div class="card metric-card border-green-200 bg-green-50 text-green-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">Active Branches</p>
+                        <p class="text-3xl font-bold" id="activeBranches">-</p>
+                        <p class="text-xs flex items-center">
+                            <i data-lucide="git-branch" class="h-3 w-3 mr-1"></i>
+                            <span id="newBranches">Loading...</span>
+                        </p>
+                    </div>
+                    <i data-lucide="git-branch" class="h-8 w-8"></i>
+                </div>
+            </div>
+
+            <!-- Behind Main -->
+            <div class="card metric-card border-yellow-200 bg-yellow-50 text-yellow-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">Behind Main</p>
+                        <p class="text-3xl font-bold" id="behindMain">-</p>
+                        <p class="text-xs flex items-center">
+                            <i data-lucide="arrow-down" class="h-3 w-3 mr-1"></i>
+                            <span id="behindTrend">projects need merge</span>
+                        </p>
+                    </div>
+                    <i data-lucide="git-merge" class="h-8 w-8"></i>
+                </div>
+            </div>
+
+            <!-- Pending Pushes -->
+            <div class="card metric-card border-purple-200 bg-purple-50 text-purple-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">Pending Pushes</p>
+                        <p class="text-3xl font-bold" id="pendingPushes">-</p>
+                        <p class="text-xs flex items-center">
+                            <i data-lucide="upload" class="h-3 w-3 mr-1"></i>
+                            <span id="pushTrend">unpushed commits</span>
+                        </p>
+                    </div>
+                    <i data-lucide="upload-cloud" class="h-8 w-8"></i>
+                </div>
+            </div>
+
+            <!-- Open PRs -->
+            <div class="card metric-card border-indigo-200 bg-indigo-50 text-indigo-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">Open PRs</p>
+                        <p class="text-3xl font-bold" id="openPRs">-</p>
+                        <p class="text-xs flex items-center">
+                            <i data-lucide="git-pull-request" class="h-3 w-3 mr-1"></i>
+                            <span id="prTrend">awaiting review</span>
+                        </p>
+                    </div>
+                    <i data-lucide="git-pull-request" class="h-8 w-8"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Project Health Matrix -->
+            <div class="lg:col-span-2">
+                <div class="card">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-gray-900">Project Health Overview</h2>
+                            <select class="text-sm border border-gray-300 rounded-md px-3 py-1" id="projectFilter">
+                                <option value="all">All Projects</option>
+                                <option value="revenue">Revenue</option>
+                                <option value="strategic">Strategic</option>
+                                <option value="infrastructure">Infrastructure</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4" id="projectList">
+                            <!-- Projects will be loaded here -->
+                            <div class="animate-pulse">
+                                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                                <div class="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-gray-200">
+                            <button class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                View All Projects →
+                            </button>
+                            <span class="text-xs text-gray-500 ml-4">
+                                Git Status Legend: ↑ahead ↓behind
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Graphs -->
+            <div class="space-y-6">
+                
+                <!-- Commits Chart -->
+                <div class="card">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">Commits by Day</h3>
+                            <div class="flex space-x-2">
+                                <button class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">7D</button>
+                                <button class="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">30D</button>
+                                <button class="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">90D</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <canvas id="commitsChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Lines of Code Chart -->
+                <div class="card">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Lines of Code Changes</h3>
+                    </div>
+                    <div class="p-6">
+                        <canvas id="locChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Project Details Section (shown when project is selected) -->
+                <div id="projectDetailsSection" class="space-y-6" style="display: none;">
+                    
+                    <!-- Open Branches -->
+                    <div class="card">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                                <i data-lucide="git-branch" class="h-5 w-5 mr-2 text-green-600"></i>
+                                Open Branches
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div id="openBranchesList" class="space-y-3">
+                                <!-- Open branches will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Open Tickets/Issues -->
+                    <div class="card">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                                <i data-lucide="clipboard-list" class="h-5 w-5 mr-2 text-blue-600"></i>
+                                Open Issues & Backlog
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div id="openTicketsList" class="space-y-3">
+                                <!-- Open tickets will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Detailed Git Status Tables -->
+        <div class="mt-8 space-y-8">
+            
+            <!-- Git Repository Status -->
+            <div class="card">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-gray-900">Git Repository Status Overview</h2>
+                        <button class="text-sm text-blue-600 hover:text-blue-800">Export CSV</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Branch</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">vs Main</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branches</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="gitStatusTable">
+                            <!-- Git status rows will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Branch Activity -->
+            <div class="card">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Branch Activity & Statistics</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active Branches</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merged This Week</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pushes This Week</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="branchActivityTable">
+                            <!-- Branch activity rows will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tickets/Issues Tracking -->
+            <div class="card">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Tickets/Issues Tracking</h2>
+                    <div class="mt-2 flex items-center space-x-6 text-sm">
+                        <span class="flex items-center">
+                            <i data-lucide="clipboard-list" class="h-4 w-4 mr-1 text-blue-600"></i>
+                            Open: <span class="font-medium ml-1" id="openIssues">-</span>
+                        </span>
+                        <span class="flex items-center">
+                            <i data-lucide="check-circle" class="h-4 w-4 mr-1 text-green-600"></i>
+                            Closed: <span class="font-medium ml-1" id="closedIssues">-</span>
+                        </span>
+                        <span class="flex items-center">
+                            <i data-lucide="trending-up" class="h-4 w-4 mr-1 text-purple-600"></i>
+                            Weekly Velocity: <span class="font-medium ml-1" id="weeklyVelocity">-</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Open Issues</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Closed This Week</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="issuesTable">
+                            <!-- Issues rows will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Scripts -->
+    <script src="dashboard.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+        });
+    </script>
+</body>
+</html>

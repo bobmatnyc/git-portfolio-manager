@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Dashboard - Simple</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; }
+        .metric { font-size: 2rem; font-weight: bold; color: #1f2937; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">Portfolio Monitoring Dashboard</h1>
+    
+    <div class="grid grid-cols-4 gap-6 mb-8">
+        <div class="card">
+            <h3 class="text-sm font-medium text-gray-600">Healthy Projects</h3>
+            <div class="metric text-green-600" id="healthyCount">8</div>
+        </div>
+        <div class="card">
+            <h3 class="text-sm font-medium text-gray-600">Need Attention</h3>
+            <div class="metric text-yellow-600" id="attentionCount">6</div>
+        </div>
+        <div class="card">
+            <h3 class="text-sm font-medium text-gray-600">Critical Issues</h3>
+            <div class="metric text-red-600" id="criticalCount">2</div>
+        </div>
+        <div class="card">
+            <h3 class="text-sm font-medium text-gray-600">Total Activity</h3>
+            <div class="metric text-blue-600" id="totalActivity">142</div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">Project Status</h2>
+        <div id="projectStatus">Loading projects...</div>
+    </div>
+    
+    <script>
+        console.log('Simple dashboard loading...');
+        
+        // Test API call
+        fetch('/api/summary')
+            .then(response => response.json())
+            .then(data => {
+                console.log('API data received:', data);
+                document.getElementById('projectStatus').innerHTML = 
+                    '<p class="text-green-600">✅ API connection successful!</p>' +
+                    '<pre class="mt-2 text-xs bg-gray-100 p-2 rounded">' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => {
+                console.error('API error:', error);
+                document.getElementById('projectStatus').innerHTML = 
+                    '<p class="text-red-600">❌ API connection failed: ' + error.message + '</p>';
+            });
+    </script>
+</body>
+</html>
