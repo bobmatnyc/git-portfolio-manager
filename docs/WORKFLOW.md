@@ -41,24 +41,42 @@ git-portfolio-manager/
 ### Feature Branch Testing
 When testing a feature branch locally before merging:
 
+**Recommended: PM2 Process Manager**
 ```bash
 # 1. Build the current feature branch
 npm run build
 
-# 2. Install globally from current directory
+# 2. Install globally from current directory  
 npm install -g .
 
-# 3. Start the dashboard server (from project root)
+# 3. Install PM2 (if not already installed)
+npm install -g pm2
+
+# 4. Start with PM2 for reliable process management
+pm2 start ecosystem.config.js
+
+# 5. Test dashboard and API endpoints
+curl http://localhost:3000/                    # Main dashboard
+curl http://localhost:3000/trackdown.html      # TrackDown UI
+curl http://localhost:3000/api/trackdown/projects   # API test
+```
+
+**PM2 Management Commands**
+```bash
+pm2 status                    # Check status
+pm2 logs trackdown-dashboard  # View logs  
+pm2 restart trackdown-dashboard  # Restart
+pm2 stop trackdown-dashboard     # Stop
+pm2 delete trackdown-dashboard   # Remove
+```
+
+**Alternative Methods (if PM2 unavailable)**
+```bash
 # Option A: Using CLI (may have initialization issues)
 git-portfolio-manager start --port 3010 --no-open --dev
 
-# Option B: Direct server start (recommended for testing)
+# Option B: Direct server start
 node lib/dashboard/server.js --port 3010
-
-# 4. Test dashboard and API endpoints
-curl http://localhost:3010/                    # Main dashboard
-curl http://localhost:3010/trackdown.html      # TrackDown UI
-curl http://localhost:3010/api/trackdown/projects   # API test
 ```
 
 ### TrackDown UI Testing
