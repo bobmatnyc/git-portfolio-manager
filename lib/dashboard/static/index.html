@@ -45,18 +45,12 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <a href="trackdown.html" class="flex items-center space-x-2 px-3 py-2 text-sm text-purple-600 hover:text-purple-900 border border-purple-300 rounded-md hover:bg-purple-50">
-                        <i data-lucide="clipboard-list" class="h-4 w-4"></i>
-                        <span>TrackDown Manager</span>
-                    </a>
+                    <!-- Keep only configuration in top nav -->
                     <button id="clearSelectionBtn" class="flex items-center space-x-2 px-3 py-2 text-sm text-blue-600 hover:text-blue-900 border border-blue-300 rounded-md hover:bg-blue-50" style="display: none;" onclick="window.dashboard.clearSelectedProject()">
                         <i data-lucide="arrow-left" class="h-4 w-4"></i>
                         <span>Back to Portfolio</span>
                     </button>
-                    <button id="triggerDiscoveryBtn" class="flex items-center space-x-2 px-3 py-2 text-sm text-green-600 hover:text-green-900 border border-green-300 rounded-md hover:bg-green-50" onclick="window.dashboard.triggerDiscovery()">
-                        <i data-lucide="refresh-cw" class="h-4 w-4"></i>
-                        <span>Re-run Discovery</span>
-                    </button>
+                    
                     <div class="relative">
                         <button id="addSiteBtn" class="flex items-center space-x-2 px-3 py-2 text-sm text-blue-600 hover:text-blue-900 border border-blue-300 rounded-md hover:bg-blue-50" onclick="window.dashboard.toggleAddSiteDropdown()">
                             <i data-lucide="plus" class="h-4 w-4"></i>
@@ -77,6 +71,7 @@
                             </div>
                         </div>
                     </div>
+                    
                     <button id="configSettingsBtn" class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50" onclick="window.dashboard.openConfigSettings()">
                         <i data-lucide="settings" class="h-4 w-4"></i>
                         <span>Configuration</span>
@@ -90,560 +85,310 @@
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <!-- Executive Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Healthy Projects -->
-            <div class="card health-healthy metric-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium">Healthy Projects</p>
-                        <p class="text-3xl font-bold" id="healthyCount">-</p>
-                        <p class="text-xs flex items-center">
-                            <i data-lucide="trending-up" class="h-3 w-3 mr-1"></i>
-                            <span id="healthyTrend">Loading...</span>
-                        </p>
+    <!-- Secondary Navigation Tabs -->
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-8" role="tablist">
+                <button id="portfolioTab" class="py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600 focus:outline-none focus:border-blue-700" role="tab" aria-selected="true" onclick="window.dashboard.switchTab('portfolio')">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="briefcase" class="h-4 w-4"></i>
+                        <span>Portfolio Overview</span>
                     </div>
-                    <i data-lucide="check-circle" class="h-8 w-8"></i>
-                </div>
-            </div>
-
-            <!-- Need Attention -->
-            <div class="card health-attention metric-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium">Need Attention</p>
-                        <p class="text-3xl font-bold" id="attentionCount">-</p>
-                        <p class="text-xs flex items-center">
-                            <i data-lucide="alert-triangle" class="h-3 w-3 mr-1"></i>
-                            <span id="attentionTrend">Loading...</span>
-                        </p>
+                </button>
+                
+                <button id="trackdownTab" class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300" role="tab" aria-selected="false" onclick="window.dashboard.switchTab('trackdown')">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="clipboard-list" class="h-4 w-4"></i>
+                        <span>TrackDown Manager</span>
                     </div>
-                    <i data-lucide="alert-circle" class="h-8 w-8"></i>
-                </div>
-            </div>
-
-            <!-- Critical Issues -->
-            <div class="card health-critical metric-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium">Critical Issues</p>
-                        <p class="text-3xl font-bold" id="criticalCount">-</p>
-                        <p class="text-xs flex items-center">
-                            <i data-lucide="alert-triangle" class="h-3 w-3 mr-1"></i>
-                            <span id="criticalTrend">Loading...</span>
-                        </p>
+                </button>
+                
+                <button id="actionsTab" class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300" role="tab" aria-selected="false" onclick="window.dashboard.switchTab('actions')">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="activity" class="h-4 w-4"></i>
+                        <span>Actions & Tools</span>
                     </div>
-                    <i data-lucide="alert-octagon" class="h-8 w-8"></i>
-                </div>
-            </div>
-
-            <!-- Total Activity -->
-            <div class="card metric-card border-blue-200 bg-blue-50 text-blue-600">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium">Total Activity</p>
-                        <p class="text-3xl font-bold" id="totalActivity">-</p>
-                        <p class="text-xs flex items-center">
-                            <i data-lucide="trending-up" class="h-3 w-3 mr-1"></i>
-                            <span id="activityTrend">commits/week</span>
-                        </p>
+                </button>
+                
+                <button id="analyticsTab" class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300" role="tab" aria-selected="false" onclick="window.dashboard.switchTab('analytics')">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="bar-chart-3" class="h-4 w-4"></i>
+                        <span>Analytics</span>
                     </div>
-                    <i data-lucide="activity" class="h-8 w-8"></i>
-                </div>
+                </button>
             </div>
         </div>
+    </nav>
 
-        <!-- Git Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Active Branches -->
-            <div class="card metric-card border-green-200 bg-green-50 text-green-600">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium">Active Branches</p>
-                        <p class="text-3xl font-bold" id="activeBranches">-</p>
-                        <p class="text-xs flex items-center">
-                            <i data-lucide="git-branch" class="h-3 w-3 mr-1"></i>
-                            <span id="newBranches">Loading...</span>
-                        </p>
-                    </div>
-                    <i data-lucide="git-branch" class="h-8 w-8"></i>
-                </div>
-            </div>
-
-            <!-- Behind Main -->
-            <div class="card metric-card border-yellow-200 bg-yellow-50 text-yellow-600">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium">Behind Main</p>
-                        <p class="text-3xl font-bold" id="behindMain">-</p>
-                        <p class="text-xs flex items-center">
-                            <i data-lucide="arrow-down" class="h-3 w-3 mr-1"></i>
-                            <span id="behindTrend">projects need merge</span>
-                        </p>
-                    </div>
-                    <i data-lucide="git-merge" class="h-8 w-8"></i>
-                </div>
-            </div>
-
-            <!-- Pending Pushes -->
-            <div class="card metric-card border-purple-200 bg-purple-50 text-purple-600">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium">Pending Pushes</p>
-                        <p class="text-3xl font-bold" id="pendingPushes">-</p>
-                        <p class="text-xs flex items-center">
-                            <i data-lucide="upload" class="h-3 w-3 mr-1"></i>
-                            <span id="pushTrend">unpushed commits</span>
-                        </p>
-                    </div>
-                    <i data-lucide="upload-cloud" class="h-8 w-8"></i>
-                </div>
-            </div>
-
-            <!-- Open PRs -->
-            <div class="card metric-card border-indigo-200 bg-indigo-50 text-indigo-600">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium">Open PRs</p>
-                        <p class="text-3xl font-bold" id="openPRs">-</p>
-                        <p class="text-xs flex items-center">
-                            <i data-lucide="git-pull-request" class="h-3 w-3 mr-1"></i>
-                            <span id="prTrend">awaiting review</span>
-                        </p>
-                    </div>
-                    <i data-lucide="git-pull-request" class="h-8 w-8"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Project Health Matrix -->
-            <div class="lg:col-span-2">
-                <div class="card">
-                    <div class="px-6 py-4 border-b border-gray-200">
+    <!-- Tab Content Panels -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Portfolio Panel (default dashboard content) -->
+        <div id="portfolioPanel">
+            <!-- Main Content moved from below -->
+            <main class="py-2">
+                <!-- Executive Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Healthy Projects -->
+                    <div class="card health-healthy metric-card">
                         <div class="flex items-center justify-between">
-                            <h2 class="text-lg font-semibold text-gray-900">Project Health Overview</h2>
-                            <select class="text-sm border border-gray-300 rounded-md px-3 py-1" id="projectFilter">
+                            <div>
+                                <p class="text-sm font-medium">Healthy Projects</p>
+                                <p class="text-3xl font-bold" id="healthyCount">-</p>
+                                <p class="text-xs flex items-center">
+                                    <i data-lucide="trending-up" class="h-3 w-3 mr-1"></i>
+                                    <span id="healthyTrend">Loading...</span>
+                                </p>
+                            </div>
+                            <i data-lucide="check-circle" class="h-8 w-8"></i>
+                        </div>
+                    </div>
+
+                    <!-- Need Attention -->
+                    <div class="card health-attention metric-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium">Need Attention</p>
+                                <p class="text-3xl font-bold" id="attentionCount">-</p>
+                                <p class="text-xs flex items-center">
+                                    <i data-lucide="alert-triangle" class="h-3 w-3 mr-1"></i>
+                                    <span id="attentionTrend">Loading...</span>
+                                </p>
+                            </div>
+                            <i data-lucide="alert-triangle" class="h-8 w-8"></i>
+                        </div>
+                    </div>
+
+                    <!-- Critical Issues -->
+                    <div class="card health-critical metric-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium">Critical Issues</p>
+                                <p class="text-3xl font-bold" id="criticalCount">-</p>
+                                <p class="text-xs flex items-center">
+                                    <i data-lucide="alert-octagon" class="h-3 w-3 mr-1"></i>
+                                    <span id="criticalTrend">Loading...</span>
+                                </p>
+                            </div>
+                            <i data-lucide="alert-octagon" class="h-8 w-8"></i>
+                        </div>
+                    </div>
+
+                    <!-- Weekly Activity -->
+                    <div class="card metric-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium">Weekly Activity</p>
+                                <p class="text-3xl font-bold" id="totalActivity">-</p>
+                                <p class="text-xs flex items-center">
+                                    <i data-lucide="activity" class="h-3 w-3 mr-1"></i>
+                                    <span id="activityTrend">Loading...</span>
+                                </p>
+                            </div>
+                            <i data-lucide="activity" class="h-8 w-8"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                    <div class="card p-4">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-blue-600" id="activeBranches">-</p>
+                            <p class="text-xs text-gray-500" id="newBranches">Loading...</p>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-orange-600" id="behindMain">-</p>
+                            <p class="text-xs text-gray-500">Behind Main</p>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-purple-600" id="pendingPushes">-</p>
+                            <p class="text-xs text-gray-500">Pending Pushes</p>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-green-600" id="openPRs">-</p>
+                            <p class="text-xs text-gray-500">Open PRs</p>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="text-center">
+                            <select id="projectFilter" class="text-sm border-gray-300 rounded-md">
                                 <option value="all">All Toolchains</option>
-                                <option value="javascript">JavaScript/Node.js</option>
-                                <option value="typescript">TypeScript</option>
-                                <option value="react">React</option>
-                                <option value="nextjs">Next.js</option>
-                                <option value="python">Python</option>
-                                <option value="go">Go</option>
-                                <option value="rust">Rust</option>
-                                <option value="java">Java</option>
-                                <option value="docker">Docker</option>
-                                <option value="unknown">Unknown</option>
                             </select>
                         </div>
                     </div>
-                    <div class="p-6">
-                        <div class="space-y-4" id="projectList">
-                            <!-- Projects will be loaded here -->
-                            <div class="animate-pulse">
-                                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                                <div class="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
-                            </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="card p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Weekly Commits</h3>
+                        <div class="h-64">
+                            <canvas id="commitsChart"></canvas>
                         </div>
-                        <div class="mt-6 pt-4 border-t border-gray-200">
-                            <button class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                View All Projects →
-                            </button>
-                            <span class="text-xs text-gray-500 ml-4">
-                                Git Status Legend: ↑ahead ↓behind
-                            </span>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Lines of Code</h3>
+                        <div class="h-64">
+                            <canvas id="locChart"></canvas>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Activity Graphs -->
-            <div class="space-y-6">
-                
-                <!-- Commits Chart -->
-                <div class="card">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-900">Commits by Day</h3>
-                            <div class="flex space-x-2">
-                                <button class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">7D</button>
-                                <button class="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">30D</button>
-                                <button class="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">90D</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <canvas id="commitsChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-
-                <!-- Lines of Code Chart -->
-                <div class="card">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">Lines of Code Changes</h3>
-                    </div>
-                    <div class="p-6">
-                        <canvas id="locChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-
-                <!-- Project Details Section (shown when project is selected) -->
-                <div id="projectDetailsSection" class="space-y-6" style="display: none;">
-                    
-                    <!-- Open Branches -->
+                <!-- Project Status Tables -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                    <!-- Projects Overview -->
                     <div class="card">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                                <i data-lucide="git-branch" class="h-5 w-5 mr-2 text-green-600"></i>
-                                Open Branches
-                            </h3>
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Projects Overview</h3>
                         </div>
-                        <div class="p-6">
-                            <div id="openBranchesList" class="space-y-3">
-                                <!-- Open branches will be loaded here -->
+                        <div class="overflow-hidden">
+                            <div id="projectList" class="divide-y divide-gray-200">
+                                <div class="p-4 text-center text-gray-500">Loading projects...</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Open Tickets/Issues -->
+                    <!-- Git Status -->
                     <div class="card">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                                <i data-lucide="clipboard-list" class="h-5 w-5 mr-2 text-blue-600"></i>
-                                Open Issues & Backlog
-                            </h3>
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Git Status</h3>
                         </div>
-                        <div class="p-6">
-                            <div id="openTicketsList" class="space-y-3">
-                                <!-- Open tickets will be loaded here -->
-                            </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Main</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branches</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="gitStatusTable" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-
                 </div>
 
+                <!-- Additional Tables -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <!-- Branch Activity -->
+                    <div class="card">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Branch Activity</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Open</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merged</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pushes</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="branchActivityTable" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Issues Tracking -->
+                    <div class="card">
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-medium text-gray-900">Issues Tracking</h3>
+                                <div class="flex space-x-4 text-xs text-gray-500">
+                                    <span>Open: <span id="openIssues" class="font-medium">-</span></span>
+                                    <span>Closed: <span id="closedIssues" class="font-medium">-</span></span>
+                                    <span>Velocity: <span id="weeklyVelocity" class="font-medium">-</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Open</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Closed</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="issuesTable" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+        <!-- TrackDown Panel -->
+        <div id="trackdownPanel" class="hidden mb-6">
+            <div class="bg-white rounded-lg border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">TrackDown Task Manager</h3>
+                    <a href="trackdown.html" target="_blank" class="flex items-center space-x-2 px-3 py-2 text-sm text-purple-600 hover:text-purple-900 border border-purple-300 rounded-md hover:bg-purple-50">
+                        <i data-lucide="external-link" class="h-4 w-4"></i>
+                        <span>Open in New Tab</span>
+                    </a>
+                </div>
+                <div class="border border-gray-300 rounded-lg overflow-hidden" style="height: 70vh;">
+                    <iframe id="trackdownIframe" class="w-full h-full border-0" title="TrackDown Manager"></iframe>
+                </div>
             </div>
         </div>
 
-        <!-- Detailed Git Status Tables -->
-        <div class="mt-8 space-y-8">
-            
-            <!-- Git Repository Status -->
-            <div class="card">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-gray-900">Git Repository Status Overview</h2>
-                        <button class="text-sm text-blue-600 hover:text-blue-800">Export CSV</button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Branch</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">vs Main</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branches</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="gitStatusTable">
-                            <!-- Git status rows will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Actions Panel (moved from top nav) -->
+        <div id="actionsPanel" class="hidden mb-6 bg-white rounded-lg border border-gray-200 p-4">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Portfolio Actions</h3>
+            <div class="flex flex-wrap gap-3">
+                <button id="triggerDiscoveryBtnTab" class="flex items-center space-x-2 px-4 py-2 text-sm text-green-600 hover:text-green-900 border border-green-300 rounded-md hover:bg-green-50" onclick="window.dashboard.triggerDiscovery()">
+                    <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                    <span>Re-run Discovery</span>
+                </button>
+                
+                <button class="flex items-center space-x-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-900 border border-blue-300 rounded-md hover:bg-blue-50" onclick="window.dashboard.exportPortfolioData()">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    <span>Export Data</span>
+                </button>
+                
+                <button class="flex items-center space-x-2 px-4 py-2 text-sm text-purple-600 hover:text-purple-900 border border-purple-300 rounded-md hover:bg-purple-50" onclick="window.dashboard.generateReport()">
+                    <i data-lucide="file-text" class="h-4 w-4"></i>
+                    <span>Generate Report</span>
+                </button>
             </div>
-
-            <!-- Branch Activity -->
-            <div class="card">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-900">Branch Activity & Statistics</h2>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active Branches</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merged This Week</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pushes This Week</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="branchActivityTable">
-                            <!-- Branch activity rows will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tickets/Issues Tracking -->
-            <div class="card">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-900">Tickets/Issues Tracking</h2>
-                    <div class="mt-2 flex items-center space-x-6 text-sm">
-                        <span class="flex items-center">
-                            <i data-lucide="clipboard-list" class="h-4 w-4 mr-1 text-blue-600"></i>
-                            Open: <span class="font-medium ml-1" id="openIssues">-</span>
-                        </span>
-                        <span class="flex items-center">
-                            <i data-lucide="check-circle" class="h-4 w-4 mr-1 text-green-600"></i>
-                            Closed: <span class="font-medium ml-1" id="closedIssues">-</span>
-                        </span>
-                        <span class="flex items-center">
-                            <i data-lucide="trending-up" class="h-4 w-4 mr-1 text-purple-600"></i>
-                            Weekly Velocity: <span class="font-medium ml-1" id="weeklyVelocity">-</span>
-                        </span>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Open Issues</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Closed This Week</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="issuesTable">
-                            <!-- Issues rows will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
         </div>
 
-    </main>
-
-    <!-- Configuration Modal -->
-    <div id="configModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-            
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Portfolio Monitor Configuration</h3>
-                        <div class="flex items-center space-x-2">
-                            <button id="toggleConfigMode" class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200" onclick="window.dashboard.toggleConfigMode()">
-                                <i data-lucide="code" class="h-3 w-3 inline mr-1"></i>
-                                <span id="configModeText">Advanced YAML</span>
-                            </button>
-                            <button onclick="window.dashboard.closeConfigModal()" class="text-gray-400 hover:text-gray-600">
-                                <i data-lucide="x" class="h-6 w-6"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Form-based Configuration (Default) -->
-                    <div id="configFormView" class="space-y-6">
-                        <!-- Server Configuration -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="server" class="h-4 w-4 mr-2"></i>
-                                Server Settings
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Port</label>
-                                    <input type="number" id="config_server_port" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1000" max="65535">
-                                    <p class="text-xs text-gray-500 mt-1">Port for dashboard server (1000-65535)</p>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Host</label>
-                                    <input type="text" id="config_server_host" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="localhost">
-                                    <p class="text-xs text-gray-500 mt-1">Server host address</p>
-                                </div>
-                                <div class="flex items-center">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" id="config_server_autoOpen" class="mr-2">
-                                        <span class="text-sm font-medium text-gray-700">Auto-open browser</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Directory Configuration -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="folder" class="h-4 w-4 mr-2"></i>
-                                Directory Settings
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div class="flex items-center">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" id="config_directories_scanCurrent" class="mr-2">
-                                        <span class="text-sm font-medium text-gray-700">Scan current directory</span>
-                                    </label>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Scan Depth</label>
-                                    <input type="number" id="config_directories_scanDepth" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1" max="5">
-                                    <p class="text-xs text-gray-500 mt-1">Directory scan depth (1-5)</p>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Tracked Directories</label>
-                                <div id="trackedDirectories" class="space-y-2 mb-2">
-                                    <!-- Dynamic tracked directories will be added here -->
-                                </div>
-                                <button type="button" onclick="window.dashboard.addTrackedDirectory()" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200">
-                                    <i data-lucide="plus" class="h-3 w-3 inline mr-1"></i>
-                                    Add Directory
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Monitoring Configuration -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="activity" class="h-4 w-4 mr-2"></i>
-                                Monitoring Settings
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Update Interval (seconds)</label>
-                                    <input type="number" id="config_monitoring_updateInterval" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="5" max="3600">
-                                    <p class="text-xs text-gray-500 mt-1">Time between updates (5-3600s)</p>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Stale Threshold (days)</label>
-                                    <input type="number" id="config_monitoring_staleThreshold" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1" max="365">
-                                    <p class="text-xs text-gray-500 mt-1">Days before project marked stale</p>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Max Concurrent Scans</label>
-                                    <input type="number" id="config_monitoring_maxConcurrentScans" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1" max="20">
-                                    <p class="text-xs text-gray-500 mt-1">Maximum parallel scans</p>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="config_monitoring_enableGitAnalysis" class="mr-2">
-                                    <span class="text-sm font-medium text-gray-700">Git Analysis</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="config_monitoring_enableTrackDown" class="mr-2">
-                                    <span class="text-sm font-medium text-gray-700">TrackDown</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="config_monitoring_enableGitHubIssues" class="mr-2">
-                                    <span class="text-sm font-medium text-gray-700">GitHub Issues</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="config_monitoring_enableHealthChecks" class="mr-2">
-                                    <span class="text-sm font-medium text-gray-700">Health Checks</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Dashboard Configuration -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="layout-dashboard" class="h-4 w-4 mr-2"></i>
-                                Dashboard Settings
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Theme</label>
-                                    <select id="config_dashboard_theme" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2">
-                                        <option value="light">Light</option>
-                                        <option value="dark">Dark</option>
-                                        <option value="auto">Auto</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Dashboard Title</label>
-                                    <input type="text" id="config_dashboard_title" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="Portfolio Monitor">
-                                </div>
-                                <div class="flex items-center">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" id="config_dashboard_compactMode" class="mr-2">
-                                        <span class="text-sm font-medium text-gray-700">Compact Mode</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-3 gap-4 mt-4">
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="config_dashboard_autoRefresh" class="mr-2">
-                                    <span class="text-sm font-medium text-gray-700">Auto Refresh</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="config_dashboard_showCharts" class="mr-2">
-                                    <span class="text-sm font-medium text-gray-700">Show Charts</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="config_dashboard_showTables" class="mr-2">
-                                    <span class="text-sm font-medium text-gray-700">Show Tables</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- GitHub Configuration -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="github" class="h-4 w-4 mr-2"></i>
-                                GitHub Integration
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">GitHub Token</label>
-                                    <input type="password" id="config_github_token" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="ghp_...">
-                                    <p class="text-xs text-gray-500 mt-1">Personal access token for GitHub API</p>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">GitHub Owner</label>
-                                    <input type="text" id="config_github_owner" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="username">
-                                    <p class="text-xs text-gray-500 mt-1">GitHub username or organization</p>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">API Timeout (ms)</label>
-                                    <input type="number" id="config_github_timeout" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1000" max="60000">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">User Agent</label>
-                                    <input type="text" id="config_github_userAgent" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="portfolio-monitor">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Raw YAML Configuration (Hidden by default) -->
-                    <div id="configYamlView" class="hidden">
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Configuration (YAML)</label>
-                            <textarea id="configTextArea" class="w-full h-96 text-sm font-mono border border-gray-300 rounded-md px-3 py-2" placeholder="Loading configuration..."></textarea>
-                        </div>
-                    
-                    <div class="text-xs text-gray-500 mb-4">
-                        <p><strong>Note:</strong> Changes will modify the YAML configuration file and restart the server automatically.</p>
-                        <p>Be careful with indentation - YAML is sensitive to spacing.</p>
-                    </div>
+        <!-- Analytics Panel -->
+        <div id="analyticsPanel" class="hidden mb-6 bg-white rounded-lg border border-gray-200 p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Portfolio Analytics</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <h4 class="text-md font-medium text-gray-700">Project Health Trends</h4>
+                    <canvas id="healthTrendChart" width="400" height="200"></canvas>
                 </div>
-                
-                    </div>
-                    
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button id="saveConfigBtn" onclick="window.dashboard.saveConfigurationSmart()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                            <i data-lucide="save" class="h-4 w-4 mr-2"></i>
-                            Save & Restart
-                        </button>
-                        <button onclick="window.dashboard.closeConfigModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
+                <div class="space-y-4">
+                    <h4 class="text-md font-medium text-gray-700">Activity Distribution</h4>
+                    <canvas id="activityChart" width="400" height="200"></canvas>
                 </div>
             </div>
         </div>
