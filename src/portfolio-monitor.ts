@@ -5,30 +5,70 @@
  * TrackDown integration, and business intelligence dashboard.
  */
 
-const path = require("node:path");
-const fs = require("fs-extra");
-const chalk = require("chalk");
-const ConfigLoader = require("./config/config-loader");
-const MasterController = require("./monitor/master-controller");
-const DashboardServer = require("./dashboard/server");
+import * as path from "path";
+import * as fs from "fs-extra";
+import * as net from "net";
+import chalk from "chalk";
+import {
+  PortfolioConfig,
+  CLIOptions,
+  MasterControllerOptions,
+  DashboardServerOptions,
+  ServerInfo,
+  ProjectScanData,
+} from "./types";
 
-class PortfolioMonitor {
-  constructor(options = {}) {
+// Import JavaScript classes until they're migrated
+const ConfigLoader = require("../lib/config/config-loader");
+const MasterController = require("../lib/monitor/master-controller");
+const DashboardServer = require("../lib/dashboard/server");
+
+export interface PortfolioMonitorOptions extends CLIOptions {
+  workingDir?: string;
+  config?: string;
+}
+
+export interface PortfolioInfo {
+  workingDir: string;
+  projectCount: number;
+  gitRepoCount: number;
+  trackdownCount: number;
+  dataDir: string;
+  lastScan: string;
+  projects: Array<{
+    name: string;
+    type: string;
+    health: string;
+    hasGit: boolean;
+    hasTrackdown: boolean;
+  }>;
+}
+
+export class PortfolioMonitor {
+  private workingDir: string;
+  private options: PortfolioMonitorOptions;
+  private config: PortfolioConfig | null = null;
+  private masterController: any = null; // Will be typed when migrated
+  private dashboardServer: any = null; // Will be typed when migrated
+  private isRunning = false;
+  private monitoringInterval?: NodeJS.Timeout;
+
+  constructor(options: PortfolioMonitorOptions = {}) {
     this.workingDir = options.workingDir || process.cwd();
     this.options = options;
-    this.config = null;
-    this.masterController = null;
-    this.dashboardServer = null;
-    this.isRunning = false;
   }
 
   /**
    * Initialize the portfolio monitor
    */
-  async initialize() {
+  async initialize(): Promise<void> {
     // Load configuration
     const configLoader = new ConfigLoader({ workingDir: this.workingDir });
     this.config = await configLoader.loadConfig(this.options.config);
+
+    if (!this.config) {
+      throw new Error("Failed to load configuration");
+    }
 
     // Override config with CLI options
     this.mergeCliOptions();
@@ -37,20 +77,22 @@ class PortfolioMonitor {
     await fs.ensureDir(this.config.data.directory);
 
     // Initialize monitoring system
-    this.masterController = new MasterController({
+    const masterControllerOptions: MasterControllerOptions = {
       workingDir: this.workingDir,
       dataDir: this.config.data.directory,
       config: this.config,
-    });
+    };
+    this.masterController = new MasterController(masterControllerOptions);
 
     // Initialize dashboard server
-    this.dashboardServer = new DashboardServer({
+    const dashboardOptions: DashboardServerOptions = {
       port: this.config.server.port,
       host: this.config.server.host,
-      dashboardDir: path.join(__dirname, "dashboard", "static"),
+      dashboardDir: path.join(__dirname, "..", "lib", "dashboard", "static"),
       dataDir: this.config.data.directory,
       config: this.config,
-    });
+    };
+    this.dashboardServer = new DashboardServer(dashboardOptions);
 
     if (this.options.dev) {
       console.log(chalk.gray("📋 Configuration loaded:"));
@@ -61,7 +103,11 @@ class PortfolioMonitor {
   /**
    * Merge CLI options with configuration
    */
-  mergeCliOptions() {
+  private mergeCliOptions(): void {
+    if (!this.config) {
+      throw new Error("Configuration not loaded");
+    }
+
     if (this.options.port) {
       this.config.server.port = this.options.port;
     }
@@ -86,7 +132,7 @@ class PortfolioMonitor {
   /**
    * Scan for projects
    */
-  async scanProjects() {
+  async scanProjects(): Promise<ProjectScanData[]> {
     if (!this.masterController) {
       throw new Error("Portfolio monitor not initialized. Call initialize() first.");
     }
@@ -97,8 +143,8 @@ class PortfolioMonitor {
   /**
    * Start the dashboard server
    */
-  async startDashboard() {
-    if (!this.dashboardServer) {
+  async startDashboard(): Promise<ServerInfo> {
+    if (!this.dashboardServer || !this.config) {
       throw new Error("Portfolio monitor not initialized. Call initialize() first.");
     }
 
@@ -107,14 +153,14 @@ class PortfolioMonitor {
     this.dashboardServer.port = port;
 
     // Start the server
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       this.dashboardServer.start();
 
       this.dashboardServer.server.on("listening", () => {
         resolve();
       });
 
-      this.dashboardServer.server.on("error", (error) => {
+      this.dashboardServer.server.on("error", (error: any) => {
         if (error.code === "EADDRINUSE") {
           reject(new Error(`Port ${port} is already in use`));
         } else {
@@ -140,8 +186,8 @@ class PortfolioMonitor {
   /**
    * Start the monitoring system
    */
-  async startMonitoring() {
-    if (!this.masterController) {
+  async startMonitoring(): Promise<void> {
+    if (!this.masterController || !this.config) {
       throw new Error("Master controller not initialized");
     }
 
@@ -167,7 +213,7 @@ class PortfolioMonitor {
     }
 
     // Graceful shutdown
-    const shutdown = async () => {
+    const shutdown = async (): Promise<void> => {
       console.log(chalk.yellow("\n🛑 Shutting down portfolio monitor..."));
       this.isRunning = false;
 
@@ -196,10 +242,10 @@ class PortfolioMonitor {
   /**
    * Get portfolio information
    */
-  async getInfo() {
+  async getInfo(): Promise<PortfolioInfo> {
     const projects = await this.scanProjects();
-    const gitRepos = projects.filter((p) => p.hasGit);
-    const trackdownProjects = projects.filter((p) => p.hasTrackdown);
+    const gitRepos = projects.filter((p) => p.git !== undefined);
+    const trackdownProjects = projects.filter((p) => p.trackdown?.hasTrackDown);
 
     return {
       workingDir: this.workingDir,
@@ -209,11 +255,11 @@ class PortfolioMonitor {
       dataDir: this.config?.data?.directory || "Unknown",
       lastScan: new Date().toISOString(),
       projects: projects.map((p) => ({
-        name: p.name,
-        type: p.type,
-        health: p.health,
-        hasGit: p.hasGit,
-        hasTrackdown: p.hasTrackdown,
+        name: p.project,
+        type: p.fileSystem?.projectType || "unknown",
+        health: p.health?.status || "unknown",
+        hasGit: p.git !== undefined,
+        hasTrackdown: p.trackdown?.hasTrackDown || false,
       })),
     };
   }
@@ -221,10 +267,8 @@ class PortfolioMonitor {
   /**
    * Find an available port starting from the specified port
    */
-  async findAvailablePort(startPort) {
-    const net = require("node:net");
-
-    const isPortAvailable = (port) => {
+  private async findAvailablePort(startPort: number): Promise<number> {
+    const isPortAvailable = (port: number): Promise<boolean> => {
       return new Promise((resolve) => {
         const server = net.createServer();
         server.listen(port, () => {
@@ -247,7 +291,7 @@ class PortfolioMonitor {
   /**
    * Stop monitoring
    */
-  async stop() {
+  async stop(): Promise<void> {
     this.isRunning = false;
 
     if (this.monitoringInterval) {
@@ -258,6 +302,17 @@ class PortfolioMonitor {
       await this.masterController.stop();
     }
   }
-}
 
-module.exports = PortfolioMonitor;
+  // Getter methods for accessing internal state
+  get currentConfig(): PortfolioConfig | null {
+    return this.config;
+  }
+
+  get running(): boolean {
+    return this.isRunning;
+  }
+
+  get workingDirectory(): string {
+    return this.workingDir;
+  }
+}

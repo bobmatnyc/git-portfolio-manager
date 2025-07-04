@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Portfolio Monitoring System - Master Controller
  *
@@ -8,19 +7,84 @@
  * User Story: US-010 Master Controller Implementation
  */
 
-const fs = require("node:fs");
-const path = require("node:path");
-const { spawn, fork } = require("node:child_process");
-const EventEmitter = require("node:events");
+import * as fs from "fs";
+import * as path from "path";
+import { EventEmitter } from "events";
+import {
+  PortfolioConfig,
+  MasterControllerOptions,
+  ProjectScanData,
+  Priority,
+  ProjectType,
+  HealthStatus,
+  LogLevel,
+} from "../types";
 
-class PortfolioMasterController extends EventEmitter {
-  constructor(options = {}) {
+// Import JavaScript class until migrated
+const ProjectMonitor = require("../../lib/monitor/project-monitor");
+
+interface ProjectInfo {
+  name: string;
+  path: string;
+  type: ProjectType;
+  priority: Priority;
+  hasGit: boolean;
+  hasPackageJson: boolean;
+  hasPyprojectToml: boolean;
+  hasTrackdown: boolean;
+  lastScan: string | null;
+  health: HealthStatus;
+  monitor: any | null; // Will be typed when ProjectMonitor is migrated
+}
+
+interface HealthStatusSummary {
+  healthy: number;
+  attention: number;
+  critical: number;
+  unknown: number;
+}
+
+interface ExecutiveSummary {
+  timestamp: string;
+  totalProjects: number;
+  activeMonitors: number;
+  healthStatus: HealthStatusSummary;
+  topAlerts: string;
+  activitySummary: string;
+}
+
+interface MasterControllerConfig {
+  projectsRoot: string;
+  scanInterval: number;
+  maxProcesses: number;
+  healthCheckInterval: number;
+  reportGenerationInterval: number;
+  logLevel: LogLevel;
+  outputDir: string;
+  dataDir: string;
+  directories: any;
+  monitoring: any;
+}
+
+export class PortfolioMasterController extends EventEmitter {
+  private workingDir: string;
+  private dataDir: string;
+  private fullConfig: PortfolioConfig;
+  private config: MasterControllerConfig;
+  private projectMonitors = new Map<string, any>();
+  private projectRegistry = new Map<string, ProjectInfo>();
+  private isRunning = false;
+  private scanTimer: NodeJS.Timeout | null = null;
+  private healthCheckTimer: NodeJS.Timeout | null = null;
+  private reportTimer: NodeJS.Timeout | null = null;
+
+  constructor(options: MasterControllerOptions = { workingDir: process.cwd(), dataDir: "", config: {} as PortfolioConfig }) {
     super();
 
     // Extract modern config structure or use legacy format
     this.workingDir = options.workingDir || process.cwd();
     this.dataDir = options.dataDir || path.join(this.workingDir, "data");
-    this.fullConfig = options.config || {};
+    this.fullConfig = options.config || ({} as PortfolioConfig);
 
     this.config = {
       projectsRoot: this.workingDir,
@@ -36,20 +100,13 @@ class PortfolioMasterController extends EventEmitter {
       monitoring: this.fullConfig.monitoring || {},
     };
 
-    this.projectMonitors = new Map();
-    this.projectRegistry = new Map();
-    this.isRunning = false;
-    this.scanTimer = null;
-    this.healthCheckTimer = null;
-    this.reportTimer = null;
-
     this.log("Master Controller initialized", "info");
   }
 
   /**
    * Start the master controller and begin monitoring
    */
-  async start() {
+  async start(): Promise<void> {
     this.log("🚀 Starting Portfolio Monitoring System", "info");
 
     try {
@@ -66,7 +123,7 @@ class PortfolioMasterController extends EventEmitter {
       this.log("✅ Master Controller started successfully", "info");
       this.log(`📊 Monitoring ${this.projectRegistry.size} projects`, "info");
     } catch (error) {
-      this.log(`❌ Failed to start Master Controller: ${error.message}`, "error");
+      this.log(`❌ Failed to start Master Controller: ${(error as Error).message}`, "error");
       throw error;
     }
   }
@@ -74,7 +131,7 @@ class PortfolioMasterController extends EventEmitter {
   /**
    * Discover all software projects in the portfolio
    */
-  async discoverProjects() {
+  async discoverProjects(): Promise<ProjectScanData[]> {
     this.log("🔍 Discovering projects in portfolio...", "info");
 
     const directories = this.config.directories;
@@ -115,13 +172,42 @@ class PortfolioMasterController extends EventEmitter {
     }
 
     this.log(`📋 Discovered ${this.projectRegistry.size} projects`, "info");
-    return Array.from(this.projectRegistry.values());
+    
+    // Convert to ProjectScanData format for return value
+    const projectScanData: ProjectScanData[] = Array.from(this.projectRegistry.values()).map(project => ({
+      timestamp: new Date().toISOString(),
+      project: project.name,
+      path: project.path,
+      priority: project.priority,
+      fileSystem: {
+        totalFiles: 0, // Will be populated by actual scan
+        projectType: project.type,
+        hasTests: false, // Will be determined by scan
+        hasDocumentation: false, // Will be determined by scan
+        configFiles: [], // Will be populated by scan
+      },
+      health: {
+        status: project.health,
+        score: project.health === "healthy" ? 100 : project.health === "attention" ? 60 : 20,
+        factors: {
+          recentActivity: 0,
+          codeQuality: 0,
+          documentation: 0,
+          testing: 0,
+          maintenance: 0,
+        },
+        issues: [],
+        recommendations: [],
+      },
+    }));
+
+    return projectScanData;
   }
 
   /**
    * Analyze individual project to determine monitoring requirements
    */
-  async analyzeProject(projectPath, projectName) {
+  private async analyzeProject(projectPath: string, projectName: string): Promise<ProjectInfo | null> {
     try {
       // Check if project has .no-monitor file (opt-out)
       if (fs.existsSync(path.join(projectPath, ".no-monitor"))) {
@@ -153,7 +239,7 @@ class PortfolioMasterController extends EventEmitter {
         monitor: null,
       };
     } catch (error) {
-      this.log(`⚠️ Error analyzing ${projectName}: ${error.message}`, "warn");
+      this.log(`⚠️ Error analyzing ${projectName}: ${(error as Error).message}`, "warn");
       return null;
     }
   }
@@ -161,7 +247,7 @@ class PortfolioMasterController extends EventEmitter {
   /**
    * Determine business priority based on project categorization
    */
-  determinePriority(projectName, projectPath) {
+  private determinePriority(projectName: string, projectPath: string): Priority {
     // Revenue-generating projects (highest priority)
     if (
       ["ai-power-rankings", "matsuoka-com", "scraper-engine"].includes(projectName) ||
@@ -190,7 +276,7 @@ class PortfolioMasterController extends EventEmitter {
   /**
    * Determine project type based on technical indicators
    */
-  determineProjectType(projectName, hasPackageJson, hasPyprojectToml) {
+  private determineProjectType(projectName: string, hasPackageJson: boolean, hasPyprojectToml: boolean): ProjectType {
     if (hasPackageJson) return "nodejs";
     if (hasPyprojectToml) return "python";
     if (projectName.includes("web") || projectName.includes("site")) return "web";
@@ -200,7 +286,7 @@ class PortfolioMasterController extends EventEmitter {
   /**
    * Start individual project monitors
    */
-  async startProjectMonitors() {
+  private async startProjectMonitors(): Promise<void> {
     this.log("🔧 Starting individual project monitors...", "info");
 
     let startedCount = 0;
@@ -218,7 +304,7 @@ class PortfolioMasterController extends EventEmitter {
         // Small delay to prevent overwhelming the system
         await this.sleep(100);
       } catch (error) {
-        this.log(`❌ Failed to start monitor for ${projectName}: ${error.message}`, "error");
+        this.log(`❌ Failed to start monitor for ${projectName}: ${(error as Error).message}`, "error");
       }
     }
 
@@ -228,10 +314,7 @@ class PortfolioMasterController extends EventEmitter {
   /**
    * Start monitoring process for individual project
    */
-  async startProjectMonitor(projectName, project) {
-    // Use direct instantiation instead of forking for better integration
-    const ProjectMonitor = require("./project-monitor");
-
+  private async startProjectMonitor(projectName: string, project: ProjectInfo): Promise<any> {
     try {
       const monitor = new ProjectMonitor({
         project: projectName,
@@ -251,117 +334,18 @@ class PortfolioMasterController extends EventEmitter {
       this.log(`✅ Started monitor for ${projectName}`, "info");
       return monitor;
     } catch (error) {
-      this.log(`❌ Failed to start monitor for ${projectName}: ${error.message}`, "error");
+      this.log(`❌ Failed to start monitor for ${projectName}: ${(error as Error).message}`, "error");
       throw error;
     }
   }
 
-  /**
-   * Handle messages from project monitor subprocesses
-   */
-  handleMonitorMessage(projectName, message) {
-    const { type, data, timestamp } = message;
 
-    switch (type) {
-      case "health_update":
-        this.updateProjectHealth(projectName, data);
-        break;
 
-      case "activity_report":
-        this.processActivityReport(projectName, data);
-        break;
-
-      case "alert":
-        this.handleProjectAlert(projectName, data);
-        break;
-
-      case "error":
-        this.log(`❌ Monitor error from ${projectName}: ${data.message}`, "error");
-        break;
-
-      default:
-        this.log(`🔍 Unknown message type from ${projectName}: ${type}`, "debug");
-    }
-  }
-
-  /**
-   * Update project health status
-   */
-  updateProjectHealth(projectName, healthData) {
-    const project = this.projectRegistry.get(projectName);
-    if (project) {
-      project.health = healthData.status;
-      project.lastScan = healthData.timestamp;
-
-      // Save health data to file
-      this.saveProjectData(projectName, "health", healthData);
-
-      this.log(`📊 Health update for ${projectName}: ${healthData.status}`, "debug");
-    }
-  }
-
-  /**
-   * Process activity report from project monitor
-   */
-  processActivityReport(projectName, activityData) {
-    // Save activity data
-    this.saveProjectData(projectName, "activity", activityData);
-
-    // Emit event for real-time updates
-    this.emit("activity_update", { project: projectName, data: activityData });
-
-    this.log(
-      `📈 Activity report for ${projectName}: ${activityData.commits || 0} commits`,
-      "debug",
-    );
-  }
-
-  /**
-   * Handle alert from project monitor
-   */
-  handleProjectAlert(projectName, alertData) {
-    const { severity, message, details } = alertData;
-
-    this.log(`🚨 ALERT [${severity}] ${projectName}: ${message}`, "warn");
-
-    // Save alert data
-    this.saveProjectData(projectName, "alerts", {
-      ...alertData,
-      timestamp: new Date().toISOString(),
-    });
-
-    // Emit alert event
-    this.emit("project_alert", { project: projectName, alert: alertData });
-
-    // Send immediate notification for critical alerts
-    if (severity === "CRITICAL") {
-      this.sendCriticalAlert(projectName, alertData);
-    }
-  }
-
-  /**
-   * Save project data to file system
-   */
-  saveProjectData(projectName, dataType, data) {
-    try {
-      const dataDir = path.join(this.config.dataDir, projectName);
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-      }
-
-      const filename = `${dataType}-${Date.now()}.json`;
-      const filepath = path.join(dataDir, filename);
-
-      fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
-    } catch (error) {
-      this.log(`❌ Failed to save data for ${projectName}: ${error.message}`, "error");
-    }
-  }
 
   /**
    * Start periodic tasks (health checks, reports)
    */
-  startPeriodicTasks() {
+  private startPeriodicTasks(): void {
     // Health check timer
     this.healthCheckTimer = setInterval(() => {
       this.performHealthCheck();
@@ -378,13 +362,15 @@ class PortfolioMasterController extends EventEmitter {
   /**
    * Perform health check on all project monitors
    */
-  performHealthCheck() {
+  private performHealthCheck(): void {
     let healthyCount = 0;
     let unhealthyCount = 0;
 
     for (const [projectName, monitor] of this.projectMonitors) {
       if (monitor && !monitor.killed) {
-        monitor.send({ type: "health_check", timestamp: Date.now() });
+        if (typeof monitor.send === "function") {
+          monitor.send({ type: "health_check", timestamp: Date.now() });
+        }
         healthyCount++;
       } else {
         unhealthyCount++;
@@ -399,10 +385,15 @@ class PortfolioMasterController extends EventEmitter {
   /**
    * Generate consolidated reports
    */
-  async generateReports() {
+  private async generateReports(): Promise<void> {
     this.log("📄 Generating portfolio reports...", "info");
 
     try {
+      // Ensure output directory exists
+      if (!fs.existsSync(this.config.outputDir)) {
+        fs.mkdirSync(this.config.outputDir, { recursive: true });
+      }
+
       // Generate executive summary
       await this.generateExecutiveSummary();
 
@@ -411,15 +402,15 @@ class PortfolioMasterController extends EventEmitter {
 
       this.log("✅ Reports generated successfully", "info");
     } catch (error) {
-      this.log(`❌ Report generation failed: ${error.message}`, "error");
+      this.log(`❌ Report generation failed: ${(error as Error).message}`, "error");
     }
   }
 
   /**
    * Generate executive summary report
    */
-  async generateExecutiveSummary() {
-    const summary = {
+  private async generateExecutiveSummary(): Promise<void> {
+    const summary: ExecutiveSummary = {
       timestamp: new Date().toISOString(),
       totalProjects: this.projectRegistry.size,
       activeMonitors: this.projectMonitors.size,
@@ -438,10 +429,35 @@ class PortfolioMasterController extends EventEmitter {
   }
 
   /**
+   * Generate individual project reports
+   */
+  private async generateProjectReports(): Promise<void> {
+    // Implementation for individual project reports
+    // This would generate detailed reports for each project
+    this.log("Individual project reports generation not yet implemented", "debug");
+  }
+
+  /**
+   * Get top alerts from recent data
+   */
+  private async getTopAlerts(): Promise<string> {
+    // Implementation would read recent alert files and summarize
+    return "No critical alerts";
+  }
+
+  /**
+   * Get activity summary from recent data
+   */
+  private async getActivitySummary(): Promise<string> {
+    // Implementation would read recent activity files and summarize
+    return "Activity data being collected...";
+  }
+
+  /**
    * Get portfolio health overview
    */
-  getPortfolioHealth() {
-    const health = { healthy: 0, attention: 0, critical: 0, unknown: 0 };
+  private getPortfolioHealth(): HealthStatusSummary {
+    const health: HealthStatusSummary = { healthy: 0, attention: 0, critical: 0, unknown: 0 };
 
     for (const project of this.projectRegistry.values()) {
       switch (project.health) {
@@ -466,7 +482,7 @@ class PortfolioMasterController extends EventEmitter {
   /**
    * Generate executive summary markdown
    */
-  generateExecutiveMarkdown(summary) {
+  private generateExecutiveMarkdown(summary: ExecutiveSummary): string {
     const { healthy, attention, critical, unknown } = summary.healthStatus;
 
     return `# Portfolio Executive Summary
@@ -501,7 +517,7 @@ ${summary.topAlerts || "No critical alerts"}
   /**
    * Calculate overall portfolio health score
    */
-  calculateHealthScore(healthStatus) {
+  private calculateHealthScore(healthStatus: HealthStatusSummary): number {
     const total =
       healthStatus.healthy + healthStatus.attention + healthStatus.critical + healthStatus.unknown;
     if (total === 0) return 0;
@@ -515,14 +531,16 @@ ${summary.topAlerts || "No critical alerts"}
   /**
    * Restart a project monitor
    */
-  async restartProjectMonitor(projectName) {
+  private async restartProjectMonitor(projectName: string): Promise<void> {
     const project = this.projectRegistry.get(projectName);
     if (!project) return;
 
     // Kill existing monitor
     const existingMonitor = this.projectMonitors.get(projectName);
     if (existingMonitor && !existingMonitor.killed) {
-      existingMonitor.kill();
+      if (typeof existingMonitor.kill === "function") {
+        existingMonitor.kill();
+      }
     }
 
     // Remove from monitors map
@@ -536,14 +554,14 @@ ${summary.topAlerts || "No critical alerts"}
       await this.startProjectMonitor(projectName, project);
       this.log(`🔄 Restarted monitor for ${projectName}`, "info");
     } catch (error) {
-      this.log(`❌ Failed to restart monitor for ${projectName}: ${error.message}`, "error");
+      this.log(`❌ Failed to restart monitor for ${projectName}: ${(error as Error).message}`, "error");
     }
   }
 
   /**
    * Gracefully stop the master controller
    */
-  async stop() {
+  async stop(): Promise<void> {
     this.log("🛑 Stopping Portfolio Monitoring System...", "info");
 
     this.isRunning = false;
@@ -559,7 +577,7 @@ ${summary.topAlerts || "No critical alerts"}
         try {
           await monitor.stop();
         } catch (error) {
-          this.log(`Error stopping monitor for ${projectName}: ${error.message}`, "error");
+          this.log(`Error stopping monitor for ${projectName}: ${(error as Error).message}`, "error");
         }
       }
     }
@@ -569,26 +587,15 @@ ${summary.topAlerts || "No critical alerts"}
     this.log("✅ Master Controller stopped", "info");
   }
 
-  /**
-   * Send critical alert notification
-   */
-  sendCriticalAlert(projectName, alertData) {
-    // In a real implementation, this would send email/Slack/etc
-    console.log(`\n🚨 CRITICAL ALERT 🚨`);
-    console.log(`Project: ${projectName}`);
-    console.log(`Issue: ${alertData.message}`);
-    console.log(`Time: ${new Date().toLocaleString()}`);
-    console.log(`Details: ${JSON.stringify(alertData.details, null, 2)}\n`);
-  }
 
   /**
    * Utility functions
    */
-  sleep(ms) {
+  private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  log(message, level = "info") {
+  private log(message: string, level: LogLevel = "info"): void {
     const timestamp = new Date().toISOString();
     const logLevels = { error: 0, warn: 1, info: 2, debug: 3 };
     const currentLevel = logLevels[this.config.logLevel] || 2;
@@ -600,30 +607,21 @@ ${summary.topAlerts || "No critical alerts"}
       console.log(`${timestamp} ${prefix} [MASTER] ${message}`);
     }
   }
+
+  // Getter methods for accessing internal state
+  get projects(): Map<string, ProjectInfo> {
+    return new Map(this.projectRegistry);
+  }
+
+  get monitors(): Map<string, any> {
+    return new Map(this.projectMonitors);
+  }
+
+  get running(): boolean {
+    return this.isRunning;
+  }
+
+  get configuration(): MasterControllerConfig {
+    return { ...this.config };
+  }
 }
-
-// CLI interface for starting the master controller
-if (require.main === module) {
-  const controller = new PortfolioMasterController();
-
-  // Handle graceful shutdown
-  process.on("SIGINT", async () => {
-    console.log("\n🛑 Received SIGINT, shutting down gracefully...");
-    await controller.stop();
-    process.exit(0);
-  });
-
-  process.on("SIGTERM", async () => {
-    console.log("\n🛑 Received SIGTERM, shutting down gracefully...");
-    await controller.stop();
-    process.exit(0);
-  });
-
-  // Start the master controller
-  controller.start().catch((error) => {
-    console.error("❌ Failed to start master controller:", error);
-    process.exit(1);
-  });
-}
-
-module.exports = PortfolioMasterController;

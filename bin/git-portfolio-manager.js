@@ -10,7 +10,7 @@
 const { program } = require("commander");
 const chalk = require("chalk");
 const ora = require("ora");
-const path = require("path");
+const path = require("node:path");
 const fs = require("fs-extra");
 const open = require("open");
 
@@ -75,10 +75,13 @@ program
       console.log(chalk.gray("\nPress Ctrl+C to stop monitoring"));
 
       // Auto-open browser unless disabled
-      if (options.open !== false) {
+      if (options.open !== false && monitor.config.server.autoOpen) {
+        console.log(chalk.gray("Opening dashboard in browser..."));
         setTimeout(() => {
-          open(serverInfo.url);
-        }, 1000);
+          open(serverInfo.url).catch(() => {
+            console.log(chalk.gray("Could not auto-open browser. Please visit the URL manually."));
+          });
+        }, 1500);
       }
     } catch (error) {
       spinner.fail("Failed to start Portfolio Monitor");
@@ -92,15 +95,19 @@ program
     }
   });
 
-// Initialize command - create config file
+// Initialize command - interactive setup with project discovery
 program
   .command("init")
-  .description("Initialize portfolio monitor configuration")
+  .description("Initialize portfolio monitor with interactive setup")
   .option("-f, --format <type>", "Configuration format (yaml|js)", "yaml")
   .option("-o, --output <file>", "Output file path")
   .option("--force", "Overwrite existing configuration")
+  .option("--no-interactive", "Skip interactive setup and create example config")
   .action(async (options) => {
     const ConfigLoader = require("../lib/config/config-loader");
+    const ProjectDiscoveryService = require("../lib/discovery/project-discovery");
+    const InteractiveConfigService = require("../lib/discovery/interactive-config");
+
     const configLoader = new ConfigLoader({ workingDir: process.cwd() });
 
     let configPath;
@@ -116,14 +123,16 @@ program
       return;
     }
 
-    const spinner = ora("Creating configuration file...").start();
+    // Non-interactive mode - create example config
+    if (!options.interactive) {
+      const spinner = ora("Creating example configuration file...").start();
 
-    try {
-      if (options.format === "yaml" || options.format === "yml") {
-        await configLoader.createExampleConfig(configPath);
-      } else {
-        // Create JS config
-        const defaultConfig = `module.exports = {
+      try {
+        if (options.format === "yaml" || options.format === "yml") {
+          await configLoader.createExampleConfig(configPath);
+        } else {
+          // Create example JS config
+          const defaultConfig = `module.exports = {
   // Server settings
   server: {
     port: 8080,
@@ -131,7 +140,7 @@ program
     autoOpen: true
   },
   
-  // Directory tracking
+  // Directory tracking - Add your project paths here
   directories: {
     scanCurrent: true,
     scanDepth: 1,
@@ -176,18 +185,108 @@ program
   }
 };`;
 
-        await fs.writeFile(configPath, defaultConfig);
-      }
-      spinner.succeed("Configuration file created successfully!");
+          await fs.writeFile(configPath, defaultConfig);
+        }
+        spinner.succeed("Example configuration file created!");
 
-      console.log(chalk.green(`\n📄 Configuration created: ${configPath}`));
-      console.log(chalk.cyan("Edit the file to customize your monitoring setup."));
-      const configType = options.format === "js" ? "JS" : "YAML";
-      console.log(chalk.gray(`Run: git-portfolio-manager start --config ${path.basename(configPath)}`));
-      console.log(chalk.gray(`Format: ${configType} configuration`));
+        console.log(chalk.green(`\n📄 Configuration created: ${configPath}`));
+        console.log(chalk.cyan("Edit the file to customize your monitoring setup."));
+        console.log(
+          chalk.gray(`Run: git-portfolio-manager start --config ${path.basename(configPath)}`),
+        );
+      } catch (error) {
+        spinner.fail("Failed to create configuration file");
+        console.error(chalk.red(`Error: ${error.message}`));
+        process.exit(1);
+      }
+      return;
+    }
+
+    // Interactive mode - discover projects and configure
+    const discoverySpinner = ora("Discovering Git repositories...").start();
+
+    try {
+      // Discover projects
+      const discoveryService = new ProjectDiscoveryService({
+        workingDir: process.cwd(),
+        maxDepth: 3,
+      });
+
+      const projects = await discoveryService.discoverGitRepositories(discoverySpinner);
+      discoverySpinner.succeed(`Found ${projects.length} Git repositories`);
+
+      // Interactive configuration
+      const interactiveService = new InteractiveConfigService({
+        workingDir: process.cwd(),
+      });
+
+      const setupResult = await interactiveService.runSetup(projects);
+
+      if (!setupResult) {
+        console.log(chalk.yellow("Setup cancelled."));
+        return;
+      }
+
+      // Generate configuration file
+      const saveSpinner = ora("Generating configuration file...").start();
+
+      if (options.format === "yaml" || options.format === "yml") {
+        const yaml = require("js-yaml");
+        const yamlContent = yaml.dump(setupResult.config, {
+          indent: 2,
+          lineWidth: -1,
+          noRefs: true,
+          quotingType: '"',
+        });
+
+        const header = `# Git Portfolio Manager Configuration
+# Generated on ${new Date().toISOString()}
+# Installation directory: ${process.cwd()}
+# Selected projects: ${setupResult.selectedProjects}
+# TrackDown enabled: ${setupResult.hasTrackDown}
+# GitHub enabled: ${setupResult.hasGitHub}
+
+`;
+
+        await fs.writeFile(configPath, header + yamlContent);
+      } else {
+        const jsContent = `// Git Portfolio Manager Configuration
+// Generated on ${new Date().toISOString()}
+// Installation directory: ${process.cwd()}
+// Selected projects: ${setupResult.selectedProjects}
+// TrackDown enabled: ${setupResult.hasTrackDown}
+// GitHub enabled: ${setupResult.hasGitHub}
+
+module.exports = ${JSON.stringify(setupResult.config, null, 2)};`;
+
+        await fs.writeFile(configPath, jsContent);
+      }
+
+      saveSpinner.succeed("Configuration saved successfully!");
+
+      // Show completion summary
+      console.log(chalk.green.bold("\n🎉 Setup Complete!\n"));
+      console.log(`${chalk.cyan("Configuration file:")} ${configPath}`);
+      console.log(`${chalk.cyan("Projects selected:")} ${setupResult.selectedProjects}`);
+      console.log(`${chalk.cyan("Dashboard port:")} ${setupResult.config.server.port}`);
+
+      if (setupResult.hasTrackDown) {
+        console.log(`${chalk.cyan("Integration:")} 📋 TrackDown enabled`);
+      }
+      if (setupResult.hasGitHub) {
+        console.log(`${chalk.cyan("Integration:")} 🐙 GitHub Issues enabled`);
+      }
+
+      console.log(chalk.green.bold("\n🚀 Ready to start monitoring!"));
+      console.log(chalk.gray(`Run: git-portfolio-manager start`));
     } catch (error) {
-      spinner.fail("Failed to create configuration file");
+      discoverySpinner.fail("Setup failed");
       console.error(chalk.red(`Error: ${error.message}`));
+
+      if (options.dev) {
+        console.error(chalk.gray(error.stack));
+      }
+
       process.exit(1);
     }
   });
@@ -219,9 +318,12 @@ program
       console.log(chalk.gray("Press Ctrl+C to stop server"));
 
       if (options.open !== false) {
+        console.log(chalk.gray("Opening dashboard in browser..."));
         setTimeout(() => {
-          open(serverInfo.url);
-        }, 1000);
+          open(serverInfo.url).catch(() => {
+            console.log(chalk.gray("Could not auto-open browser. Please visit the URL manually."));
+          });
+        }, 1500);
       }
     } catch (error) {
       spinner.fail("Failed to start dashboard server");
@@ -251,7 +353,7 @@ program
 
       if (info.projects.length > 0) {
         console.log(chalk.yellow("\n📁 Projects:"));
-        info.projects.forEach((project) => {
+        for (const project of info.projects) {
           const status = project.health || "unknown";
           const statusIcon =
             status === "healthy"
@@ -262,7 +364,7 @@ program
                   ? "❌"
                   : "❓";
           console.log(`  ${statusIcon} ${project.name} (${project.type || "unknown"})`);
-        });
+        }
       }
     } catch (error) {
       console.error(chalk.red(`Error: ${error.message}`));

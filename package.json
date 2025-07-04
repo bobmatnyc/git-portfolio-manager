@@ -9,23 +9,38 @@
   "scripts": {
     "start": "node bin/git-portfolio-manager.js",
     "dev": "node bin/git-portfolio-manager.js --dev",
+    "build": "tsc",
+    "build:turbo": "turbo run build",
+    "build:watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "typecheck:turbo": "turbo run typecheck",
     "test": "vitest run",
+    "test:turbo": "turbo run test",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "biome check lib/ bin/ test/",
-    "lint:fix": "biome check lib/ bin/ test/ --apply",
-    "build": "echo 'No build step required'",
+    "lint": "biome check lib/ bin/ test/ src/",
+    "lint:turbo": "turbo run lint",
+    "lint:fix": "biome check lib/ bin/ test/ src/ --apply",
     "release": "standard-version",
     "release:major": "standard-version --release-as major",
-    "release:minor": "standard-version --release-as minor", 
+    "release:minor": "standard-version --release-as minor",
     "release:patch": "standard-version --release-as patch",
-    "prepublishOnly": "npm run test && npm run lint",
+    "deploy": "./scripts/deploy-local.sh deploy",
+    "deploy:build": "./scripts/deploy-local.sh build",
+    "deploy:start": "./scripts/deploy-local.sh start",
+    "deploy:stop": "./scripts/deploy-local.sh stop",
+    "deploy:restart": "./scripts/deploy-local.sh restart",
+    "deploy:status": "./scripts/deploy-local.sh status",
+    "deploy:logs": "./scripts/deploy-local.sh logs",
+    "prebuild": "npm run clean",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run lint",
     "postinstall": "echo 'Git Portfolio Manager installed! Run: npx git-portfolio-manager'"
   },
   "keywords": [
     "git",
     "project-management",
-    "monitoring", 
+    "monitoring",
     "dashboard",
     "analytics",
     "trackdown",
@@ -55,28 +70,37 @@
     "npm": ">=6.0.0"
   },
   "dependencies": {
-    "commander": "^11.1.0",
+    "@octokit/auth-token": "^4.0.0",
+    "@octokit/rest": "^20.0.2",
     "chalk": "^4.1.2",
-    "ora": "^5.4.1",
-    "inquirer": "^8.2.6",
+    "commander": "^11.1.0",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "fs-extra": "^11.1.1",
     "glob": "^10.3.10",
-    "open": "^8.4.2",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
     "helmet": "^7.1.0",
-    "compression": "^1.7.4",
-    "js-yaml": "^4.1.0",
+    "inquirer": "^8.2.6",
     "joi": "^17.11.0",
-    "@octokit/rest": "^20.0.2",
-    "@octokit/auth-token": "^4.0.0"
+    "js-yaml": "^4.1.0",
+    "open": "^8.4.2",
+    "ora": "^5.4.1"
   },
   "devDependencies": {
-    "vitest": "^1.6.0",
     "@biomejs/biome": "1.8.3",
-    "standard-version": "^9.5.0",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/fs-extra": "^11.0.4",
+    "@types/inquirer": "^9.0.8",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.0.10",
     "husky": "^8.0.3",
-    "lint-staged": "^15.2.0"
+    "lint-staged": "^15.2.0",
+    "standard-version": "^9.5.0",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3",
+    "vitest": "^1.6.0"
   },
   "files": [
     "bin/",
@@ -102,16 +126,46 @@
   },
   "standard-version": {
     "types": [
-      {"type": "feat", "section": "Features"},
-      {"type": "fix", "section": "Bug Fixes"},
-      {"type": "chore", "hidden": true},
-      {"type": "docs", "section": "Documentation"},
-      {"type": "style", "hidden": true},
-      {"type": "refactor", "section": "Code Refactoring"},
-      {"type": "perf", "section": "Performance Improvements"},
-      {"type": "test", "hidden": true},
-      {"type": "build", "hidden": true},
-      {"type": "ci", "hidden": true}
+      {
+        "type": "feat",
+        "section": "Features"
+      },
+      {
+        "type": "fix",
+        "section": "Bug Fixes"
+      },
+      {
+        "type": "chore",
+        "hidden": true
+      },
+      {
+        "type": "docs",
+        "section": "Documentation"
+      },
+      {
+        "type": "style",
+        "hidden": true
+      },
+      {
+        "type": "refactor",
+        "section": "Code Refactoring"
+      },
+      {
+        "type": "perf",
+        "section": "Performance Improvements"
+      },
+      {
+        "type": "test",
+        "hidden": true
+      },
+      {
+        "type": "build",
+        "hidden": true
+      },
+      {
+        "type": "ci",
+        "hidden": true
+      }
     ]
   }
 }
