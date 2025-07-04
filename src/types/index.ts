@@ -237,6 +237,7 @@ export interface DashboardServerOptions {
   dashboardDir: string;
   dataDir: string;
   config: PortfolioConfig;
+  masterController?: any; // Will be typed when migrated
 }
 
 export interface ServerInfo {

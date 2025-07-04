@@ -49,14 +49,38 @@
                         <i data-lucide="arrow-left" class="h-4 w-4"></i>
                         <span>Back to Portfolio</span>
                     </button>
-                    <button class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900">
+                    <button id="triggerDiscoveryBtn" class="flex items-center space-x-2 px-3 py-2 text-sm text-green-600 hover:text-green-900 border border-green-300 rounded-md hover:bg-green-50" onclick="window.dashboard.triggerDiscovery()">
+                        <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                        <span>Re-run Discovery</span>
+                    </button>
+                    <div class="relative">
+                        <button id="addSiteBtn" class="flex items-center space-x-2 px-3 py-2 text-sm text-blue-600 hover:text-blue-900 border border-blue-300 rounded-md hover:bg-blue-50" onclick="window.dashboard.toggleAddSiteDropdown()">
+                            <i data-lucide="plus" class="h-4 w-4"></i>
+                            <span>Add Site</span>
+                        </button>
+                        <div id="addSiteDropdown" class="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg z-50" style="display: none;">
+                            <div class="p-4">
+                                <div class="mb-3">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Add Directory to Monitor</label>
+                                    <select id="directorySelect" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2">
+                                        <option value="">Loading directories...</option>
+                                    </select>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="addDirectoryBtn" class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700" onclick="window.dashboard.addSelectedDirectory()">Add</button>
+                                    <button class="flex-1 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50" onclick="window.dashboard.toggleAddSiteDropdown()">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="configSettingsBtn" class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50" onclick="window.dashboard.openConfigSettings()">
                         <i data-lucide="settings" class="h-4 w-4"></i>
-                        <span>Settings</span>
+                        <span>Configuration</span>
                     </button>
-                    <button class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900">
-                        <i data-lucide="user" class="h-4 w-4"></i>
-                        <span>Profile</span>
-                    </button>
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                        <i data-lucide="github" class="h-4 w-4"></i>
+                        <span id="githubUsername">Loading...</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -201,10 +225,17 @@
                         <div class="flex items-center justify-between">
                             <h2 class="text-lg font-semibold text-gray-900">Project Health Overview</h2>
                             <select class="text-sm border border-gray-300 rounded-md px-3 py-1" id="projectFilter">
-                                <option value="all">All Projects</option>
-                                <option value="revenue">Revenue</option>
-                                <option value="strategic">Strategic</option>
-                                <option value="infrastructure">Infrastructure</option>
+                                <option value="all">All Toolchains</option>
+                                <option value="javascript">JavaScript/Node.js</option>
+                                <option value="typescript">TypeScript</option>
+                                <option value="react">React</option>
+                                <option value="nextjs">Next.js</option>
+                                <option value="python">Python</option>
+                                <option value="go">Go</option>
+                                <option value="rust">Rust</option>
+                                <option value="java">Java</option>
+                                <option value="docker">Docker</option>
+                                <option value="unknown">Unknown</option>
                             </select>
                         </div>
                     </div>
@@ -387,6 +418,232 @@
         </div>
 
     </main>
+
+    <!-- Configuration Modal -->
+    <div id="configModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Portfolio Monitor Configuration</h3>
+                        <div class="flex items-center space-x-2">
+                            <button id="toggleConfigMode" class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200" onclick="window.dashboard.toggleConfigMode()">
+                                <i data-lucide="code" class="h-3 w-3 inline mr-1"></i>
+                                <span id="configModeText">Advanced YAML</span>
+                            </button>
+                            <button onclick="window.dashboard.closeConfigModal()" class="text-gray-400 hover:text-gray-600">
+                                <i data-lucide="x" class="h-6 w-6"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Form-based Configuration (Default) -->
+                    <div id="configFormView" class="space-y-6">
+                        <!-- Server Configuration -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                <i data-lucide="server" class="h-4 w-4 mr-2"></i>
+                                Server Settings
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Port</label>
+                                    <input type="number" id="config_server_port" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1000" max="65535">
+                                    <p class="text-xs text-gray-500 mt-1">Port for dashboard server (1000-65535)</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Host</label>
+                                    <input type="text" id="config_server_host" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="localhost">
+                                    <p class="text-xs text-gray-500 mt-1">Server host address</p>
+                                </div>
+                                <div class="flex items-center">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" id="config_server_autoOpen" class="mr-2">
+                                        <span class="text-sm font-medium text-gray-700">Auto-open browser</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Directory Configuration -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                <i data-lucide="folder" class="h-4 w-4 mr-2"></i>
+                                Directory Settings
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="flex items-center">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" id="config_directories_scanCurrent" class="mr-2">
+                                        <span class="text-sm font-medium text-gray-700">Scan current directory</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Scan Depth</label>
+                                    <input type="number" id="config_directories_scanDepth" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1" max="5">
+                                    <p class="text-xs text-gray-500 mt-1">Directory scan depth (1-5)</p>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tracked Directories</label>
+                                <div id="trackedDirectories" class="space-y-2 mb-2">
+                                    <!-- Dynamic tracked directories will be added here -->
+                                </div>
+                                <button type="button" onclick="window.dashboard.addTrackedDirectory()" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200">
+                                    <i data-lucide="plus" class="h-3 w-3 inline mr-1"></i>
+                                    Add Directory
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Monitoring Configuration -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                <i data-lucide="activity" class="h-4 w-4 mr-2"></i>
+                                Monitoring Settings
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Update Interval (seconds)</label>
+                                    <input type="number" id="config_monitoring_updateInterval" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="5" max="3600">
+                                    <p class="text-xs text-gray-500 mt-1">Time between updates (5-3600s)</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Stale Threshold (days)</label>
+                                    <input type="number" id="config_monitoring_staleThreshold" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1" max="365">
+                                    <p class="text-xs text-gray-500 mt-1">Days before project marked stale</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Max Concurrent Scans</label>
+                                    <input type="number" id="config_monitoring_maxConcurrentScans" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1" max="20">
+                                    <p class="text-xs text-gray-500 mt-1">Maximum parallel scans</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="config_monitoring_enableGitAnalysis" class="mr-2">
+                                    <span class="text-sm font-medium text-gray-700">Git Analysis</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="config_monitoring_enableTrackDown" class="mr-2">
+                                    <span class="text-sm font-medium text-gray-700">TrackDown</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="config_monitoring_enableGitHubIssues" class="mr-2">
+                                    <span class="text-sm font-medium text-gray-700">GitHub Issues</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="config_monitoring_enableHealthChecks" class="mr-2">
+                                    <span class="text-sm font-medium text-gray-700">Health Checks</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Dashboard Configuration -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                <i data-lucide="layout-dashboard" class="h-4 w-4 mr-2"></i>
+                                Dashboard Settings
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Theme</label>
+                                    <select id="config_dashboard_theme" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2">
+                                        <option value="light">Light</option>
+                                        <option value="dark">Dark</option>
+                                        <option value="auto">Auto</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Dashboard Title</label>
+                                    <input type="text" id="config_dashboard_title" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="Portfolio Monitor">
+                                </div>
+                                <div class="flex items-center">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" id="config_dashboard_compactMode" class="mr-2">
+                                        <span class="text-sm font-medium text-gray-700">Compact Mode</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 mt-4">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="config_dashboard_autoRefresh" class="mr-2">
+                                    <span class="text-sm font-medium text-gray-700">Auto Refresh</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="config_dashboard_showCharts" class="mr-2">
+                                    <span class="text-sm font-medium text-gray-700">Show Charts</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="config_dashboard_showTables" class="mr-2">
+                                    <span class="text-sm font-medium text-gray-700">Show Tables</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- GitHub Configuration -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                <i data-lucide="github" class="h-4 w-4 mr-2"></i>
+                                GitHub Integration
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">GitHub Token</label>
+                                    <input type="password" id="config_github_token" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="ghp_...">
+                                    <p class="text-xs text-gray-500 mt-1">Personal access token for GitHub API</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">GitHub Owner</label>
+                                    <input type="text" id="config_github_owner" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="username">
+                                    <p class="text-xs text-gray-500 mt-1">GitHub username or organization</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">API Timeout (ms)</label>
+                                    <input type="number" id="config_github_timeout" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" min="1000" max="60000">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">User Agent</label>
+                                    <input type="text" id="config_github_userAgent" class="w-full text-sm border border-gray-300 rounded-md px-3 py-2" placeholder="portfolio-monitor">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Raw YAML Configuration (Hidden by default) -->
+                    <div id="configYamlView" class="hidden">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Configuration (YAML)</label>
+                            <textarea id="configTextArea" class="w-full h-96 text-sm font-mono border border-gray-300 rounded-md px-3 py-2" placeholder="Loading configuration..."></textarea>
+                        </div>
+                    
+                    <div class="text-xs text-gray-500 mb-4">
+                        <p><strong>Note:</strong> Changes will modify the YAML configuration file and restart the server automatically.</p>
+                        <p>Be careful with indentation - YAML is sensitive to spacing.</p>
+                    </div>
+                </div>
+                
+                    </div>
+                    
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button id="saveConfigBtn" onclick="window.dashboard.saveConfigurationSmart()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                            <i data-lucide="save" class="h-4 w-4 mr-2"></i>
+                            Save & Restart
+                        </button>
+                        <button onclick="window.dashboard.closeConfigModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="dashboard.js"></script>

@@ -44,6 +44,17 @@ export interface PortfolioInfo {
   }>;
 }
 
+export interface PortInfo {
+  port: number;
+  wasChanged: boolean;
+  offset?: number;
+}
+
+export interface PortUser {
+  pid: string;
+  process: string;
+}
+
 export class PortfolioMonitor {
   private workingDir: string;
   private options: PortfolioMonitorOptions;
@@ -91,6 +102,7 @@ export class PortfolioMonitor {
       dashboardDir: path.join(__dirname, "..", "lib", "dashboard", "static"),
       dataDir: this.config.data.directory,
       config: this.config,
+      masterController: this.masterController,
     };
     this.dashboardServer = new DashboardServer(dashboardOptions);
 
@@ -143,33 +155,45 @@ export class PortfolioMonitor {
   /**
    * Start the dashboard server
    */
-  async startDashboard(): Promise<ServerInfo> {
+  async startDashboard(): Promise<ServerInfo & { portChanged?: boolean; originalPort?: number }> {
     if (!this.dashboardServer || !this.config) {
       throw new Error("Portfolio monitor not initialized. Call initialize() first.");
     }
 
-    // Find available port if specified port is in use
-    const port = await this.findAvailablePort(this.config.server.port);
-    this.dashboardServer.port = port;
+    // Check for port conflicts and find available port
+    const portInfo = await this.findAvailablePortWithAlert(this.config.server.port);
+    this.dashboardServer.port = portInfo.port;
 
-    // Start the server
+    // Start the server with enhanced error handling
     await new Promise<void>((resolve, reject) => {
       this.dashboardServer.start();
 
       this.dashboardServer.server.on("listening", () => {
+        if (portInfo.wasChanged) {
+          console.log(chalk.green(`✅ Dashboard started on alternate port: ${portInfo.port}`));
+        } else {
+          console.log(chalk.green(`✅ Dashboard started on configured port: ${portInfo.port}`));
+        }
         resolve();
       });
 
       this.dashboardServer.server.on("error", (error: any) => {
         if (error.code === "EADDRINUSE") {
-          reject(new Error(`Port ${port} is already in use`));
+          console.error(chalk.red(`❌ Port conflict: ${portInfo.port} is already in use`));
+          console.error(chalk.yellow(`💡 Try stopping other services or use a different port`));
+          reject(new Error(`Port ${portInfo.port} is already in use after detection`));
+        } else if (error.code === "EACCES") {
+          console.error(chalk.red(`❌ Permission denied: Cannot bind to port ${portInfo.port}`));
+          console.error(chalk.yellow(`💡 Try using a port > 1024 or run with elevated privileges`));
+          reject(new Error(`Permission denied for port ${portInfo.port}`));
         } else {
+          console.error(chalk.red(`❌ Server error: ${error.message}`));
           reject(error);
         }
       });
     });
 
-    const url = `http://${this.config.server.host}:${port}`;
+    const url = `http://${this.config.server.host}:${portInfo.port}`;
 
     // Start monitoring if not dashboard-only mode
     if (!this.options.dashboardOnly) {
@@ -178,8 +202,10 @@ export class PortfolioMonitor {
 
     return {
       url,
-      port,
+      port: portInfo.port,
       host: this.config.server.host,
+      portChanged: portInfo.wasChanged,
+      originalPort: this.config.server.port,
     };
   }
 
@@ -265,9 +291,9 @@ export class PortfolioMonitor {
   }
 
   /**
-   * Find an available port starting from the specified port
+   * Find an available port with user alerts and conflict detection
    */
-  private async findAvailablePort(startPort: number): Promise<number> {
+  private async findAvailablePortWithAlert(requestedPort: number): Promise<PortInfo> {
     const isPortAvailable = (port: number): Promise<boolean> => {
       return new Promise((resolve) => {
         const server = net.createServer();
@@ -279,13 +305,88 @@ export class PortfolioMonitor {
       });
     };
 
-    for (let port = startPort; port < startPort + 100; port++) {
-      if (await isPortAvailable(port)) {
-        return port;
+    const getPortUser = async (port: number): Promise<PortUser | null> => {
+      try {
+        const { execSync } = require("child_process");
+        const result = execSync(`lsof -ti:${port}`, { encoding: "utf8", stdio: "pipe" });
+        const pid = result.trim();
+        if (pid) {
+          const processInfo = execSync(`ps -p ${pid} -o comm=`, { encoding: "utf8", stdio: "pipe" });
+          return { pid, process: processInfo.trim() };
+        }
+      } catch (error) {
+        // lsof might not be available or port might not be in use
+      }
+      return null;
+    };
+
+    // Check if requested port is available - double check to avoid race conditions
+    if (await isPortAvailable(requestedPort)) {
+      // Double-check with lsof to ensure no race condition
+      const portUser = await getPortUser(requestedPort);
+      if (!portUser) {
+        console.log(chalk.blue(`🔍 Port ${requestedPort} is available and ready`));
+        return { port: requestedPort, wasChanged: false };
+      } else {
+        console.log(chalk.yellow(`⚠️  Port ${requestedPort} became unavailable (race condition detected)`));
+        console.log(chalk.yellow(`   Currently used by: ${portUser.process} (PID: ${portUser.pid})`));
       }
     }
 
-    throw new Error(`No available ports found in range ${startPort}-${startPort + 99}`);
+    // Port is in use, get details about what's using it
+    const portUser = await getPortUser(requestedPort);
+    if (portUser) {
+      console.log(chalk.yellow(`⚠️  Port conflict detected!`));
+      console.log(chalk.yellow(`   Requested port: ${requestedPort}`));
+      console.log(chalk.yellow(`   Currently used by: ${portUser.process} (PID: ${portUser.pid})`));
+      console.log(chalk.blue(`🔍 Searching for alternative port...`));
+    } else {
+      console.log(chalk.yellow(`⚠️  Port ${requestedPort} is in use, searching for alternative...`));
+    }
+
+    // Find next available port
+    const maxPortsToCheck = 100;
+    for (let offset = 1; offset <= maxPortsToCheck; offset++) {
+      const testPort = requestedPort + offset;
+      
+      // Skip well-known ports and stay within valid range
+      if (testPort > 65535) break;
+      if (testPort < 1024 && requestedPort >= 1024) continue;
+
+      if (await isPortAvailable(testPort)) {
+        console.log(chalk.green(`✅ Found available port: ${testPort} (offset +${offset})`));
+        
+        // Alert user about port change
+        if (offset <= 10) {
+          console.log(chalk.blue(`💡 Dashboard will start on port ${testPort} instead of ${requestedPort}`));
+        } else {
+          console.log(chalk.yellow(`⚠️  Had to use port ${testPort} - consider configuring a different base port`));
+        }
+
+        return { port: testPort, wasChanged: true, offset };
+      }
+    }
+
+    // No available port found
+    console.error(chalk.red(`❌ No available ports found in range ${requestedPort}-${requestedPort + maxPortsToCheck}`));
+    console.error(chalk.yellow(`💡 Suggestions:`));
+    console.error(chalk.yellow(`   1. Stop other services using ports in this range`));
+    console.error(chalk.yellow(`   2. Configure a different port in your config file`));
+    console.error(chalk.yellow(`   3. Use --port option to specify a different port`));
+    
+    if (portUser) {
+      console.error(chalk.yellow(`   4. Stop the conflicting process: kill ${portUser.pid}`));
+    }
+
+    throw new Error(`No available ports found in range ${requestedPort}-${requestedPort + maxPortsToCheck}`);
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
+  private async findAvailablePort(startPort: number): Promise<number> {
+    const result = await this.findAvailablePortWithAlert(startPort);
+    return result.port;
   }
 
   /**

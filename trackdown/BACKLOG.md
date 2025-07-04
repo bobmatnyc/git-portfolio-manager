@@ -174,30 +174,159 @@
 
 ## Epic: EP-002 Advanced Features
 **Goal:** Add advanced monitoring and configuration features
+**Status:** Completed ✅
+**Completed:** 2025-07-04
 
-### US-007: Custom Monitoring Rules
+### US-007: Custom Monitoring Rules ✅
 **As a** team lead  
 **I want** to define custom monitoring rules  
 **So that** I can set project-specific health criteria
+**Status:** Done  
+**Completed:** 2025-07-04
 
-### US-008: GitHub Issues Integration
+### US-008: GitHub Issues Integration ✅
 **As a** development team using GitHub  
 **I want** to use GitHub Issues instead of TrackDown  
 **So that** I can leverage my existing issue tracking workflow
+**Status:** Done  
+**Completed:** 2025-07-04
 
 **Tasks:**
-- [ ] Add GitHub API client with authentication (T-031)
-- [ ] Update configuration schema for GitHub settings (T-032)
-- [ ] Implement GitHub repository detection (T-033)
-- [ ] Add GitHub Issues fetching and parsing (T-034)
-- [ ] Display GitHub Issues in dashboard (T-035)
-- [ ] Add rate limiting and error handling (T-036)
-- [ ] Update documentation with GitHub examples (T-037)
+- [x] Add GitHub API client with authentication (T-031)
+- [x] Update configuration schema for GitHub settings (T-032)
+- [x] Implement GitHub repository detection (T-033)
+- [x] Add GitHub Issues fetching and parsing (T-034)
+- [x] Display GitHub Issues in dashboard (T-035)
+- [x] Add rate limiting and error handling (T-036)
+- [x] Update documentation with GitHub examples (T-037)
 
-### US-009: Multi-Environment Support
+### US-009: Multi-Environment Support ✅
 **As a** DevOps engineer  
 **I want** to monitor multiple environments  
 **So that** I can track dev, staging, and production projects
+**Status:** Done  
+**Completed:** 2025-07-04
+
+---
+
+## Epic: EP-003 Dashboard Enhancements & UX
+**Goal:** Enhanced user experience and dashboard functionality
+**Status:** Completed ✅
+**Completed:** 2025-07-04
+
+### US-010: Enhanced Dashboard Controls ✅
+**As a** user  
+**I want** web-based controls for project discovery  
+**So that** I can manage monitoring without editing files
+**Status:** Done  
+**Completed:** 2025-07-04
+
+**Features:**
+- [x] Re-run discovery button
+- [x] Add site dropdown with directory selection
+- [x] Remove site controls with trash icons
+- [x] YAML config modification and server restart
+- [x] Project description extraction from README files
+- [x] Toolchain-based filtering instead of business impact
+
+### US-011: GitHub Integration & Sync ✅
+**As a** developer using GitHub  
+**I want** bidirectional GitHub ↔ TrackDown synchronization  
+**So that** I can manage issues across both systems
+**Status:** Done  
+**Completed:** 2025-07-04
+
+**Features:**
+- [x] GitHub ↔ TrackDown bidirectional sync service
+- [x] Issue creation and updating in GitHub
+- [x] Status mapping between systems
+- [x] Conflict resolution and update detection
+
+### US-012: TrackDown Project Manager ✅
+**As a** project manager  
+**I want** a JIRA-like interface for TrackDown projects  
+**So that** I can manage all projects from a single dashboard
+**Status:** Done  
+**Completed:** 2025-07-04
+
+**Features:**
+- [x] Comprehensive JIRA-like interface
+- [x] Kanban board view with drag-and-drop
+- [x] Multi-project ticket management
+- [x] Advanced filtering and search
+- [x] Project analytics and reporting
+
+### US-013: Git History & Analytics ✅
+**As a** developer  
+**I want** detailed git history reports with visualizations  
+**So that** I can understand project evolution and metrics
+**Status:** Done  
+**Completed:** 2025-07-04
+
+**Features:**
+- [x] Comprehensive git history report generator
+- [x] Branch evolution analysis with Mermaid diagrams
+- [x] LOC statistics and contributor analysis
+- [x] Report caching in .git-portfolio-manager/reports
+- [x] HTML report export with embedded visualizations
+
+### US-014: User-Friendly Configuration ✅
+**As a** user  
+**I want** form-based configuration instead of raw YAML editing  
+**So that** I can configure the system without learning YAML syntax
+**Status:** Done  
+**Completed:** 2025-07-04
+
+**Features:**
+- [x] Auto-generated forms with data validation
+- [x] Dual mode: Form editor and advanced YAML
+- [x] Real-time validation with clear error messages
+- [x] Dynamic tracked directory management
+- [x] Bidirectional sync between form and YAML modes
+
+---
+
+## Epic: EP-004 Future Enhancements (Backlog)
+**Goal:** Next iteration features and improvements
+**Status:** Backlog
+**Priority:** Low
+
+### US-015: Enhanced Visualization & Analytics
+**As a** team lead  
+**I want** advanced project visualization and analytics  
+**So that** I can make data-driven decisions about project health
+
+**Features:**
+- [ ] Multi-project line graphs showing all projects
+- [ ] Detailed single-project metrics (LOC added/deleted, branch stats)
+- [ ] Interactive charts with time range selection
+- [ ] Project comparison and benchmarking
+- [ ] Performance trend analysis
+- [ ] Code velocity metrics
+
+### US-016: Report Caching & Performance
+**As a** user with large repositories  
+**I want** cached reports and optimized performance  
+**So that** dashboard loads quickly and doesn't overwhelm the system
+
+**Features:**
+- [ ] Enhanced report caching in .git-portfolio-manager/reports
+- [ ] Incremental updates for large repositories
+- [ ] Background report generation
+- [ ] Cache invalidation strategies
+- [ ] Performance monitoring and metrics
+
+### US-017: Advanced Project Discovery
+**As a** user managing many projects  
+**I want** smarter project discovery and organization  
+**So that** I can efficiently manage complex project portfolios
+
+**Features:**
+- [ ] Intelligent project categorization
+- [ ] Workspace and project group management
+- [ ] Dependency detection between projects
+- [ ] Health scoring algorithms
+- [ ] Automated alerts and notifications
 
 ---
 

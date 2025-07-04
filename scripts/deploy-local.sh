@@ -86,6 +86,39 @@ stop_service() {
     fi
 }
 
+# Check for port conflicts
+check_port_conflict() {
+    local port=$1
+    local service_using_port=""
+    
+    if command -v lsof >/dev/null 2>&1; then
+        service_using_port=$(lsof -ti:$port 2>/dev/null | head -1)
+        if [[ -n "$service_using_port" ]]; then
+            local process_name=$(ps -p "$service_using_port" -o comm= 2>/dev/null || echo "unknown")
+            return 0  # Port is in use
+        fi
+    elif command -v netstat >/dev/null 2>&1; then
+        if netstat -ln 2>/dev/null | grep -q ":$port "; then
+            return 0  # Port is in use
+        fi
+    fi
+    
+    return 1  # Port is available
+}
+
+# Get port from config file
+get_configured_port() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        # Try to extract port from YAML config (accounting for indentation under server section)
+        local port=$(grep "port:" "$CONFIG_FILE" | grep -o '[0-9]\+' | head -1)
+        if [[ -n "$port" && "$port" =~ ^[0-9]+$ ]]; then
+            echo "$port"
+            return 0
+        fi
+    fi
+    echo "8080"  # Default port
+}
+
 # Start the service
 start_service() {
     if is_service_running; then
@@ -100,10 +133,23 @@ start_service() {
         error "Config file not found: $CONFIG_FILE"
     fi
     
+    # Check for port conflicts before starting
+    local configured_port=$(get_configured_port)
+    log "Checking port $configured_port for conflicts..."
+    
+    if check_port_conflict "$configured_port"; then
+        warning "Port $configured_port is already in use!"
+        log "The service will automatically find an alternative port"
+        log "You can check the actual port in the logs or dashboard output"
+    else
+        log "Port $configured_port is available"
+    fi
+    
     # Change to deploy directory and start service
     cd "$DEPLOY_DIR"
     
     # Start the service in background and capture PID
+    log "Launching portfolio monitor service..."
     nohup npx git-portfolio-manager start --config "$CONFIG_FILE" >> "$LOG_FILE" 2>&1 &
     local pid=$!
     
@@ -111,9 +157,28 @@ start_service() {
     echo "$pid" > "$PID_FILE"
     
     # Wait a moment to check if service started successfully
-    sleep 2
+    sleep 3
     if kill -0 "$pid" 2>/dev/null; then
         success "Service started successfully (PID: $pid)"
+        
+        # Try to extract the actual port from logs
+        local actual_port=""
+        if [[ -f "$LOG_FILE" ]]; then
+            # Look for port information in recent logs
+            actual_port=$(tail -20 "$LOG_FILE" | grep -o "localhost:[0-9]*" | tail -1 | cut -d: -f2)
+            if [[ -n "$actual_port" ]]; then
+                if [[ "$actual_port" != "$configured_port" ]]; then
+                    warning "Service started on alternate port: $actual_port (configured: $configured_port)"
+                    log "Dashboard available at: http://localhost:$actual_port"
+                else
+                    success "Service started on configured port: $actual_port"
+                    log "Dashboard available at: http://localhost:$actual_port"
+                fi
+            else
+                log "Dashboard port will be shown in logs"
+            fi
+        fi
+        
         log "Service logs: tail -f $LOG_FILE"
     else
         rm -f "$PID_FILE"
@@ -135,12 +200,33 @@ check_status() {
         local pid=$(cat "$PID_FILE")
         success "$SERVICE_NAME is running (PID: $pid)"
         
-        # Try to get port info from config
-        if [[ -f "$CONFIG_FILE" ]]; then
-            local port=$(grep -E "^\s*port:\s*" "$CONFIG_FILE" | sed 's/.*port:\s*//' | tr -d ' ')
-            if [[ -n "$port" ]]; then
-                log "Dashboard should be available at: http://localhost:$port"
+        # Try to get actual port from logs (more accurate than config)
+        local actual_port=""
+        if [[ -f "$LOG_FILE" ]]; then
+            actual_port=$(tail -20 "$LOG_FILE" | grep -o "localhost:[0-9]*" | tail -1 | cut -d: -f2)
+        fi
+        
+        # Try to get configured port from config as fallback
+        local configured_port=$(get_configured_port)
+        
+        if [[ -n "$actual_port" ]]; then
+            if [[ "$actual_port" != "$configured_port" ]]; then
+                log "Dashboard running at: http://localhost:$actual_port (configured: $configured_port)"
+                warning "Service is using alternate port due to conflict"
+            else
+                log "Dashboard available at: http://localhost:$actual_port"
             fi
+            
+            # Check if port is actually accessible
+            if command -v curl >/dev/null 2>&1; then
+                if curl -s "http://localhost:$actual_port" >/dev/null 2>&1; then
+                    success "Dashboard is accessible"
+                else
+                    warning "Dashboard port is not responding"
+                fi
+            fi
+        elif [[ -n "$configured_port" ]]; then
+            log "Dashboard should be available at: http://localhost:$configured_port"
         fi
         
         # Show recent logs
@@ -150,6 +236,20 @@ check_status() {
         fi
     else
         warning "$SERVICE_NAME is not running"
+        
+        # Check if there are any processes using the configured port
+        local configured_port=$(get_configured_port)
+        if check_port_conflict "$configured_port"; then
+            warning "Port $configured_port is in use by another service"
+            if command -v lsof >/dev/null 2>&1; then
+                local pid=$(lsof -ti:$configured_port 2>/dev/null | head -1)
+                if [[ -n "$pid" ]]; then
+                    local process=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
+                    log "Port $configured_port is used by: $process (PID: $pid)"
+                fi
+            fi
+        fi
+        
         return 1
     fi
 }
