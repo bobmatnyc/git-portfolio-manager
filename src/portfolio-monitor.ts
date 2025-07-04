@@ -382,14 +382,6 @@ export class PortfolioMonitor {
   }
 
   /**
-   * Legacy method for backward compatibility
-   */
-  private async findAvailablePort(startPort: number): Promise<number> {
-    const result = await this.findAvailablePortWithAlert(startPort);
-    return result.port;
-  }
-
-  /**
    * Stop monitoring
    */
   async stop(): Promise<void> {
