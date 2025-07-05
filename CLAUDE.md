@@ -1,6 +1,19 @@
-# Claude Code Instructions
+# Claude Code Instructions - Git Portfolio Manager
 
 **AI Assistant Instructions for Git Portfolio Manager Project**
+
+## 🚨 CRITICAL: Claude PM Framework Integration
+
+**Project Management Repository**: `~/Projects/Claude-PM/`
+- **ALL TrackDown tickets**: `Claude-PM/trackdown/BACKLOG.md`
+- **Framework configuration**: `Claude-PM/framework/CLAUDE.md`
+- **Integration status**: This project is part of **M01 Foundation** milestone
+
+### 🎫 MANDATORY TICKET SYSTEM
+**EVERY** task requires a TrackDown ticket in the Claude-PM repository:
+- **Format**: [M01-XXX] prefixes for this project
+- **Location**: `~/Projects/Claude-PM/trackdown/BACKLOG.md`
+- **Reference in commits**: `git commit -m "feat: implement X - closes M01-XXX"`
 
 ## CRITICAL: Review Required Documentation
 **IMPORTANT**: Before starting any work, you MUST review these files:
@@ -8,6 +21,7 @@
 2. `/docs/WORKFLOW.md` - Required workflow processes  
 3. `/docs/PROJECT.md` - Project specifications and requirements
 4. `/docs/TOOLCHAIN.md` - Comprehensive toolchain and technical configuration guide
+5. `~/Projects/Claude-PM/framework/CLAUDE.md` - Master framework configuration
 
 **Following these instructions is MANDATORY. Ask for clarification before considering ANY variance from the documented procedures.**
 
