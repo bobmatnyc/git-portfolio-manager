@@ -1,6 +1,6 @@
 {
   "name": "@bobmatnyc/git-portfolio-manager",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Git portfolio management and monitoring dashboard with TrackDown integration, GitHub Issues, and business intelligence for development teams",
   "main": "lib/index.js",
   "bin": {

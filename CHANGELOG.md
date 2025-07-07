@@ -1,45 +1,16 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### [1.1.1](https://github.com/bobmatnyc/git-portfolio-manager/compare/v1.1.0...v1.1.1) (2025-07-07)
 
-## [Unreleased]
-
-### Added
-- Initial portfolio monitoring system
-- Git repository analysis and health assessment
-- TrackDown methodology integration
-- Real-time web dashboard with interactive charts
-- Project-specific statistics and filtering
-- Open branches and tickets visualization
-- YAML and JavaScript configuration support
-- CLI interface with comprehensive commands
-- Automatic project discovery and scanning
-- Business intelligence and priority mapping
-- Semantic versioning with standard-version
-- Comprehensive documentation and examples
 
 ### Features
-- **Dashboard**: Interactive web interface with project cards, health indicators, and activity charts
-- **Git Analytics**: Commit analysis, branch tracking, stale branch detection, and remote status
-- **TrackDown Integration**: Automatic parsing of backlog files, task tracking, and progress monitoring
-- **Configuration**: Flexible YAML/JS config with validation, environment variable support
-- **CLI Tools**: Full-featured command line interface with multiple commands and options
-- **Business Intelligence**: Priority mapping, health scoring, and alert thresholds
-- **Multi-Directory Support**: Monitor projects across different directory trees
-- **Real-time Updates**: Live dashboard updates with configurable refresh intervals
 
-### Technical
-- Node.js 14+ support with modern JavaScript features
-- Express.js web server with static file serving
-- Chart.js integration for data visualization
-- Tailwind CSS for responsive design
-- Joi validation for configuration schemas
-- Commander.js for CLI argument parsing
-- Comprehensive error handling and logging
-- Cross-platform compatibility (Windows, macOS, Linux)
+* complete migration to managed subdirectory - closes M01-019 ([2bafb3d](https://github.com/bobmatnyc/git-portfolio-manager/commit/2bafb3d7aa7949a227d817d42b6890b12bc39f3a))
+* complete US-015 TrackDown API Integration ([de815f1](https://github.com/bobmatnyc/git-portfolio-manager/commit/de815f1ea2f65e1e43825e938327efb2f7564db3))
+* integrate with Claude-PM framework - closes M01-009 ([02dce35](https://github.com/bobmatnyc/git-portfolio-manager/commit/02dce35a0ed85d69ca1f271d8bfca26d4b1cb967))
+* update npm package name to [@bobmatnyc](https://github.com/bobmatnyc) organization scope ([27a878a](https://github.com/bobmatnyc/git-portfolio-manager/commit/27a878a8c178e3551ca796f771c0f3cc2cc2f1b5))
 
 ## [1.0.0] - 2025-07-04
 
