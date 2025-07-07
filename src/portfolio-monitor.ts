@@ -18,6 +18,10 @@ import {
   ProjectScanData,
 } from "./types";
 
+// Import enhanced error handling utilities
+const { ErrorHandler, ApplicationError } = require("../lib/utils/error-handler");
+const { createProjectLogger } = require("../lib/utils/logger");
+
 // Import JavaScript classes until they're migrated
 const ConfigLoader = require("../lib/config/config-loader");
 const MasterController = require("../lib/monitor/master-controller");
@@ -63,53 +67,93 @@ export class PortfolioMonitor {
   private dashboardServer: any = null; // Will be typed when migrated
   private isRunning = false;
   private monitoringInterval?: NodeJS.Timeout;
+  private logger: any;
+  private errorHandler: any;
 
   constructor(options: PortfolioMonitorOptions = {}) {
     this.workingDir = options.workingDir || process.cwd();
     this.options = options;
+    
+    // Initialize enhanced error handling and logging
+    this.logger = createProjectLogger('PortfolioMonitor', {
+      level: options.dev ? 'debug' : 'info',
+      enableFile: true
+    });
+    this.errorHandler = new ErrorHandler(this.logger);
+
+    this.logger.info('Portfolio Monitor initialized', {
+      workingDir: this.workingDir,
+      options: this.options
+    });
   }
 
   /**
    * Initialize the portfolio monitor
    */
   async initialize(): Promise<void> {
-    // Load configuration
-    const configLoader = new ConfigLoader({ workingDir: this.workingDir });
-    this.config = await configLoader.loadConfig(this.options.config);
+    return this.errorHandler.safeExecute(async () => {
+      await this.logger.info('Initializing Portfolio Monitor');
 
-    if (!this.config) {
-      throw new Error("Failed to load configuration");
-    }
+      // Check dependencies
+      await this.checkDependencies();
 
-    // Override config with CLI options
-    this.mergeCliOptions();
+      // Load configuration
+      const configLoader = new ConfigLoader({ workingDir: this.workingDir });
+      this.config = await configLoader.loadConfig(this.options.config);
 
-    // Ensure data directory exists
-    await fs.ensureDir(this.config.data.directory);
+      if (!this.config) {
+        throw new ApplicationError(
+          "Failed to load configuration",
+          'CONFIG_LOAD_FAILED',
+          500,
+          { workingDir: this.workingDir, configPath: this.options.config }
+        );
+      }
 
-    // Initialize monitoring system
-    const masterControllerOptions: MasterControllerOptions = {
-      workingDir: this.workingDir,
-      dataDir: this.config.data.directory,
-      config: this.config,
-    };
-    this.masterController = new MasterController(masterControllerOptions);
+      // Override config with CLI options
+      this.mergeCliOptions();
 
-    // Initialize dashboard server
-    const dashboardOptions: DashboardServerOptions = {
-      port: this.config.server.port,
-      host: this.config.server.host,
-      dashboardDir: path.join(__dirname, "..", "lib", "dashboard", "static"),
-      dataDir: this.config.data.directory,
-      config: this.config,
-      masterController: this.masterController,
-    };
-    this.dashboardServer = new DashboardServer(dashboardOptions);
+      // Ensure data directory exists with enhanced error handling
+      await this.errorHandler.safeFileOperation(
+        () => fs.ensureDir(this.config!.data.directory),
+        this.config.data.directory,
+        'ensure_directory'
+      );
 
-    if (this.options.dev) {
-      console.log(chalk.gray("📋 Configuration loaded:"));
-      console.log(chalk.gray(JSON.stringify(this.config, null, 2)));
-    }
+      // Initialize monitoring system
+      const masterControllerOptions: MasterControllerOptions = {
+        workingDir: this.workingDir,
+        dataDir: this.config.data.directory,
+        config: this.config,
+      };
+      this.masterController = new MasterController(masterControllerOptions);
+
+      // Initialize dashboard server
+      const dashboardOptions: DashboardServerOptions = {
+        port: this.config.server.port,
+        host: this.config.server.host,
+        dashboardDir: path.join(__dirname, "..", "lib", "dashboard", "static"),
+        dataDir: this.config.data.directory,
+        config: this.config,
+        masterController: this.masterController,
+      };
+      this.dashboardServer = new DashboardServer(dashboardOptions);
+
+      if (this.options.dev) {
+        await this.logger.debug('Configuration loaded', {
+          config: this.config
+        });
+      }
+
+      await this.logger.info('Portfolio Monitor initialization completed');
+    }, {
+      operation: 'initialize_portfolio_monitor',
+      maxRetries: 1,
+      fallback: async () => {
+        await this.logger.error('Initialization failed, attempting minimal initialization');
+        await this.initializeMinimal();
+      }
+    });
   }
 
   /**
@@ -142,14 +186,91 @@ export class PortfolioMonitor {
   }
 
   /**
+   * Check system dependencies
+   */
+  private async checkDependencies(): Promise<void> {
+    const dependencies = [
+      { name: 'git', type: 'command' },
+      { name: 'node', type: 'command' },
+      { name: 'fs-extra', type: 'module' },
+      { name: 'chalk', type: 'module' }
+    ];
+
+    const depCheck = await this.errorHandler.checkDependencies(dependencies);
+    
+    if (!depCheck.allAvailable) {
+      await this.logger.warn('Some dependencies are missing', {
+        missing: depCheck.missing.map((d: any) => d.name),
+        available: depCheck.available
+      });
+
+      // Check for critical dependencies
+      const criticalMissing = depCheck.missing.filter((d: any) => 
+        ['git', 'node'].includes(d.name)
+      );
+
+      if (criticalMissing.length > 0) {
+        throw new ApplicationError(
+          `Critical dependencies missing: ${criticalMissing.map((d: any) => d.name).join(', ')}`,
+          'MISSING_DEPENDENCIES',
+          500,
+          { missing: criticalMissing }
+        );
+      }
+    } else {
+      await this.logger.debug('All dependencies are available');
+    }
+  }
+
+  /**
+   * Initialize minimal configuration for fallback
+   */
+  private async initializeMinimal(): Promise<void> {
+    await this.logger.warn('Initializing in minimal mode due to configuration errors');
+    
+    const configLoader = new ConfigLoader({ workingDir: this.workingDir });
+    this.config = configLoader.getMinimalConfig();
+    
+    // Ensure basic data directory
+    if (this.config?.data?.directory) {
+      await fs.ensureDir(this.config.data.directory);
+      
+      await this.logger.info('Minimal initialization completed', {
+        dataDir: this.config.data.directory,
+        mode: 'minimal'
+      });
+    }
+  }
+
+  /**
    * Scan for projects
    */
   async scanProjects(): Promise<ProjectScanData[]> {
-    if (!this.masterController) {
-      throw new Error("Portfolio monitor not initialized. Call initialize() first.");
-    }
+    return this.errorHandler.safeExecute(async () => {
+      if (!this.masterController) {
+        throw new ApplicationError(
+          "Portfolio monitor not initialized. Call initialize() first.",
+          'NOT_INITIALIZED',
+          500
+        );
+      }
 
-    return await this.masterController.discoverProjects();
+      await this.logger.debug('Scanning for projects');
+      const projects = await this.masterController.discoverProjects();
+      
+      await this.logger.info('Project scan completed', {
+        projectCount: projects.length
+      });
+
+      return projects;
+    }, {
+      operation: 'scan_projects',
+      maxRetries: 2,
+      fallback: async () => {
+        await this.logger.warn('Falling back to empty project list due to scan errors');
+        return [];
+      }
+    });
   }
 
   /**
