@@ -1,19 +1,6 @@
-# Claude Code Instructions - Git Portfolio Manager
+# Git Portfolio Manager - Claude Code Configuration
 
 **AI Assistant Instructions for Git Portfolio Manager Project**
-
-## 🚨 CRITICAL: Claude PM Framework Integration
-
-**Project Management Repository**: `~/Projects/Claude-PM/`
-- **ALL TrackDown tickets**: `Claude-PM/trackdown/BACKLOG.md`
-- **Framework configuration**: `Claude-PM/framework/CLAUDE.md`
-- **Integration status**: This project is part of **M01 Foundation** milestone
-
-### 🎫 MANDATORY TICKET SYSTEM
-**EVERY** task requires a TrackDown ticket in the Claude-PM repository:
-- **Format**: [M01-XXX] prefixes for this project
-- **Location**: `~/Projects/Claude-PM/trackdown/BACKLOG.md`
-- **Reference in commits**: `git commit -m "feat: implement X - closes M01-XXX"`
 
 ## CRITICAL: Review Required Documentation
 **IMPORTANT**: Before starting any work, you MUST review these files:
@@ -21,49 +8,30 @@
 2. `/docs/WORKFLOW.md` - Required workflow processes  
 3. `/docs/PROJECT.md` - Project specifications and requirements
 4. `/docs/TOOLCHAIN.md` - Comprehensive toolchain and technical configuration guide
-5. `~/Projects/Claude-PM/framework/CLAUDE.md` - Master framework configuration
 
 **Following these instructions is MANDATORY. Ask for clarification before considering ANY variance from the documented procedures.**
 
-## 🔄 TrackDown Integration & Task Management
+## 🔄 Task Management System
 
-### YOLO Mode Requirements
-- **ALWAYS work from a TrackDown task** when in YOLO mode
-- **Branch naming MUST tie to TrackDown tasks**: `feature/US-001-description`
-- **All development work** follows epic/subticket workflow with proper branching
-- **Never work without a linked TrackDown ticket** for accountability
+### Local TrackDown Integration
+- **Use local trackdown system** for task management
+- **Branch naming**: `feature/task-description` or `fix/issue-description`
+- **All development work** should follow issue-driven workflow
+- **Link commits to local issues**: `git commit -m "feat: implement X - refs #123"`
 
-### Task-Driven Development Workflow
+### Development Workflow
 ```bash
-# 1. Start from TrackDown task
-trackdown view US-001  # Review task details
+# 1. Review local trackdown/issues
+# 2. Create appropriately named branch
+git checkout -b feature/new-feature
 
-# 2. Create properly named branch
-git checkout -b feature/US-001-new-feature
-
-# 3. Update task status
-trackdown update US-001 --status "In Progress"
-
-# 4. Implement with task linkage in commits
+# 3. Implement with clear commit messages
 git commit -m "feat: implement core feature
 
-Partial work on US-001. Added basic structure.
-References: EP-001"
+Added basic portfolio monitoring structure."
 
-# 5. Complete and link back to task
-trackdown update US-001 --status "Done" --notes "Implementation complete"
+# 4. Update trackdown status when complete
 ```
-
-### Epic Management
-- **Complex work MUST use epic/subticket structure**
-- **Epic branches** serve as base for all related subticket branches
-- **All documentation epics** follow the 6-subticket pattern:
-  1. Audit and Analysis
-  2. Toolchain Enhancement  
-  3. Workflow Documentation
-  4. Business Context
-  5. Structure Optimization
-  6. Integration Testing
 
 ---
 
@@ -270,10 +238,9 @@ npm run lint && npm test
 - **Clean up test artifacts** - use temp directories, clean in afterEach
 
 ## 📋 Task Management
-- User prefers **Track Down over GitHub issues** for project management
-- Update `WORKFLOW.md` to reflect Track Down preference
+- Use **local project trackdown system** for task management
 - Track **security vulnerabilities** through GitHub issues when needed
-- All development work should link back to TrackDown tickets
+- All development work should link back to local project tickets
 
 ## 🚀 Publishing Requirements
 - **All tests must pass** before publishing
