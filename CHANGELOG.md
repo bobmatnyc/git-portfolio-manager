@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.2](https://github.com/bobmatnyc/git-portfolio-manager/compare/v1.1.1...v1.1.2) (2025-07-07)
+
+
+### Features
+
+* implement comprehensive error handling system (TD-001) ([a0efafe](https://github.com/bobmatnyc/git-portfolio-manager/commit/a0efafe580743e48d8381832305cfeb7466c1392))
+
 ### [1.1.1](https://github.com/bobmatnyc/git-portfolio-manager/compare/v1.1.0...v1.1.1) (2025-07-07)
 
 
